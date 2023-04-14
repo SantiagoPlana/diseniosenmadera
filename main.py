@@ -96,6 +96,7 @@ class CsvTableModel(qtc.QAbstractTableModel):
 class MainWindow(qtw.QMainWindow):
 
     model = None
+    pedidos = {}
 
     def __init__(self):
         """MainWindow constructor."""
@@ -142,8 +143,9 @@ class MainWindow(qtw.QMainWindow):
         self.material.addItems(
             ['Seleccione material...', 'Pino', 'Algarrobo']
         )
-        self.modelo.addItems(['Seleccione modelo...'])
-        self.articulo.addItems(['Seleccione artículo...'])
+        self.modelo.addItems(['Seleccione modelo...', 'Placard 1,80', 'Placard 1,40',
+                              'Barra L', 'Barra Recta'])
+        self.articulo.addItems(['Seleccione artículo...', 'Placard', 'Barra'])
 
         # Botones
         self.btn_agregar = qtw.QPushButton('Agregar')
@@ -164,19 +166,25 @@ class MainWindow(qtw.QMainWindow):
         second_widget.layout().addWidget(self.observaciones, 3, 1, 1, 3)
         second_widget.layout().addWidget(self.btn_agregar, 4, 1)
 
-        # User check
-        log_in, ok = qtw.QInputDialog.getText(self, "Ingreso",
-                                              "Contraseña:", qtw.QLineEdit.Password,
-                                              )
-
-        if not ok:
-            self.close()
-            sys.exit()
-        else:
-            if log_in != 'Cachucha':
+        # Password check
+        password = ''
+        while password != 'Ok':
+            log_in, ok = qtw.QInputDialog.getText(self, "Ingreso",
+                                                  "Contraseña:", qtw.QLineEdit.Password,
+                                                  )
+            if not ok:
                 self.close()
                 sys.exit()
+            else:
+                if log_in != 'Cachucha':
+                    qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
+                else:
+                    password = 'Ok'
 
+
+        # Signals
+
+        self.btn_agregar.clicked.connect(self.agregar_item)
         # End main UI code
         self.show()
 
@@ -214,6 +222,52 @@ class MainWindow(qtw.QMainWindow):
         if selected:
             self.model.removeRows(selected[0].row(), num_rows, None)
 
+    # Form methods
+    def populate_list(self):
+        self.lista.clear()
+        cliente = self.nombre_cliente.text()
+        for pedido in self.pedidos.get('Pedido', []):
+            orden = (
+                pedido['Artículos']
+                if pedido['Artículos']
+                else 'No hay artículos'
+            )
+            self.lista.addItem(f'{cliente}: {orden}')
+
+    def agregar_item(self):
+        pedido = {
+            'Cliente': self.nombre_cliente.text(),
+            'Contacto': self.numero_cliente.text(),
+            'Fecha': 'dd-mm-yy',
+            'Artículos': [self.articulo.currentText(), self.modelo.currentText(),
+                          self.material.currentText()],
+            'Observaciones': self.observaciones.toPlainText()
+        }
+        articulos = []
+        numero_pedido = self.lista.currentRow()
+        if numero_pedido == -1:
+            articulos.append(pedido)
+        else:
+            articulos[numero_pedido] = pedido
+
+        #print(pedido)
+        #print(self.pedidos)
+        print(articulos)
+        self.pedidos['Pedido'] = articulos
+        print(self.pedidos)
+        self.populate_list()
+
+    def real_agregar_item(self):
+        pedido = {'Nombre del cliente': self.nombre_cliente.text(),
+                  'Artículo': self.tableview.selectedIndexes()}
+        articulos = []
+        numero_pedido = self.lista.currentRow()
+        if numero_pedido == -1:
+            articulos.append(pedido)
+        else:
+            articulos[numero_pedido] = pedido
+        self.pedidos['Pedido'] = articulos
+        self.populate_list()
 
 if __name__ == '__main__':
     app = qtw.QApplication(sys.argv)
