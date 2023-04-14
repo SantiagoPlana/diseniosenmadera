@@ -142,6 +142,9 @@ class MainWindow(qtw.QMainWindow):
         self.material.addItems(
             ['Seleccione material...', 'Pino', 'Algarrobo']
         )
+        self.modelo.addItems(['Seleccione modelo...'])
+        self.articulo.addItems(['Seleccione artículo...'])
+
         # Botones
         self.btn_agregar = qtw.QPushButton('Agregar')
         self.btn_pedido = qtw.QPushButton('Hacer Pedido')
@@ -162,13 +165,17 @@ class MainWindow(qtw.QMainWindow):
         second_widget.layout().addWidget(self.btn_agregar, 4, 1)
 
         # User check
-        log_in = qtw.QMessageBox()
-        log_in.setWindowTitle('Ingreso')
-        log_in.setLayout(qtw.QGridLayout())
-        log_in.setWindowModality(qtc.Qt.WindowModal)
-        log_in.addButton(qtw.QMessageBox.Yes)
+        log_in, ok = qtw.QInputDialog.getText(self, "Ingreso",
+                                              "Contraseña:", qtw.QLineEdit.Password,
+                                              )
 
-        response = log_in.exec()
+        if not ok:
+            self.close()
+            sys.exit()
+        else:
+            if log_in != 'Cachucha':
+                self.close()
+                sys.exit()
 
         # End main UI code
         self.show()
