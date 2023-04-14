@@ -244,8 +244,7 @@ class MainWindow(qtw.QMainWindow):
         pedido = {'Cliente': self.nombre_cliente.text(),
                   'Artículo': self.tableview.selectedIndexes()[0].data(),
                   'Precio': self.tableview.selectedIndexes()[1].data()}
-        # id_us = int(self.tableview.model().data(pedido['Artículo']).toString())
-        #print(len(self.tableview.selectedIndexes()))
+
         articulos = []
         numero_pedido = self.lista.currentRow()
         if numero_pedido == -1:
@@ -263,6 +262,9 @@ class MainWindow(qtw.QMainWindow):
     def terminar_pedido(self):
         self.lista.clear()
         self.total.setText('Total: ')
+        self.nombre_cliente.clear()
+        self.numero_cliente.clear()
+        self.observaciones.clear()
 
 
 if __name__ == '__main__':
