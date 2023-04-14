@@ -106,6 +106,7 @@ class MainWindow(qtw.QMainWindow):
         self.resize(800, 600)
         self.tableview = qtw.QTableView()
         self.tableview.setSortingEnabled(True)
+        self.tableview.alternatingRowColors()
         self.setCentralWidget(self.tableview)
 
         # Menu
@@ -182,6 +183,8 @@ class MainWindow(qtw.QMainWindow):
                     password = 'Ok'
 
 
+
+
         # Signals
 
         self.btn_agregar.clicked.connect(self.agregar_item)
@@ -228,38 +231,18 @@ class MainWindow(qtw.QMainWindow):
         cliente = self.nombre_cliente.text()
         for pedido in self.pedidos.get('Pedido', []):
             orden = (
-                pedido['Artículos']
-                if pedido['Artículos']
+                pedido['Artículo']
+                if pedido['Artículo']
                 else 'No hay artículos'
             )
             self.lista.addItem(f'{cliente}: {orden}')
 
     def agregar_item(self):
-        pedido = {
-            'Cliente': self.nombre_cliente.text(),
-            'Contacto': self.numero_cliente.text(),
-            'Fecha': 'dd-mm-yy',
-            'Artículos': [self.articulo.currentText(), self.modelo.currentText(),
-                          self.material.currentText()],
-            'Observaciones': self.observaciones.toPlainText()
-        }
-        articulos = []
-        numero_pedido = self.lista.currentRow()
-        if numero_pedido == -1:
-            articulos.append(pedido)
-        else:
-            articulos[numero_pedido] = pedido
+        pedido = {'Cliente': self.nombre_cliente.text(),
+                  'Artículo': self.tableview.selectedIndexes()[0].data()}
+        # id_us = int(self.tableview.model().data(pedido['Artículo']).toString())
+        print(pedido['Artículo'])
 
-        #print(pedido)
-        #print(self.pedidos)
-        print(articulos)
-        self.pedidos['Pedido'] = articulos
-        print(self.pedidos)
-        self.populate_list()
-
-    def real_agregar_item(self):
-        pedido = {'Nombre del cliente': self.nombre_cliente.text(),
-                  'Artículo': self.tableview.selectedIndexes()}
         articulos = []
         numero_pedido = self.lista.currentRow()
         if numero_pedido == -1:
@@ -268,6 +251,11 @@ class MainWindow(qtw.QMainWindow):
             articulos[numero_pedido] = pedido
         self.pedidos['Pedido'] = articulos
         self.populate_list()
+
+    def dummy(self):
+        index = self.tableview.selectedIndexes()[0]
+
+        print(index.data())
 
 if __name__ == '__main__':
     app = qtw.QApplication(sys.argv)
