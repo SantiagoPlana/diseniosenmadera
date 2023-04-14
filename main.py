@@ -103,10 +103,10 @@ class MainWindow(qtw.QMainWindow):
         super().__init__()
         # Main UI
         self.setWindowTitle('Diseños en Madera')
-        self.resize(800, 600)
+        self.resize(1000, 600)
         self.tableview = qtw.QTableView()
         self.tableview.setSortingEnabled(True)
-        self.tableview.alternatingRowColors()
+        self.tableview.setAlternatingRowColors(True)
         self.setCentralWidget(self.tableview)
 
         # Menu
@@ -125,7 +125,7 @@ class MainWindow(qtw.QMainWindow):
         self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock)
         self.setDockNestingEnabled(True)
         dock2 = qtw.QDockWidget('Filtros')
-        self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock2)
+        self.addDockWidget(qtc.Qt.TopDockWidgetArea, dock2)
         filter_widget = qtw.QWidget()
         filter_widget.setLayout(qtw.QVBoxLayout())
         second_widget = qtw.QWidget()
@@ -140,6 +140,7 @@ class MainWindow(qtw.QMainWindow):
         self.observaciones = qtw.QTextEdit(placeholderText='Observaciones')
         self.nombre_cliente = qtw.QLineEdit(placeholderText='Nombre del cliente')
         self.numero_cliente = qtw.QLineEdit(placeholderText='Número de teléfono')
+        self.total = qtw.QLabel('Total: 0')
         # Agregar categorías
         self.material.addItems(
             ['Seleccione material...', 'Pino', 'Algarrobo']
@@ -149,13 +150,16 @@ class MainWindow(qtw.QMainWindow):
         self.articulo.addItems(['Seleccione artículo...', 'Placard', 'Barra'])
 
         # Botones
-        self.btn_agregar = qtw.QPushButton('Agregar')
-        self.btn_pedido = qtw.QPushButton('Hacer Pedido')
+        self.btn_agregar = qtw.QPushButton('Agregar Item')
+        self.btn_pedido = qtw.QPushButton('Finalizar Pedido')
         self.btn_eliminar = qtw.QPushButton('Eliminar')
+        self.btn_cargar = qtw.QPushButton('Cargar Tabla')
 
         filter_widget.layout().addWidget(self.nombre_cliente)
         filter_widget.layout().addWidget(self.numero_cliente)
         filter_widget.layout().addWidget(self.lista)
+        filter_widget.layout().addWidget(self.total)
+        filter_widget.layout().addWidget(self.observaciones)
         filter_widget.layout().addWidget(self.btn_pedido)
         second_widget.layout().addWidget(qtw.QLabel('Material'), 1, 1)
         second_widget.layout().addWidget(self.material, 2, 1)
@@ -164,8 +168,9 @@ class MainWindow(qtw.QMainWindow):
         second_widget.layout().addWidget(qtw.QLabel('Modelo'), 1, 3)
 
         second_widget.layout().addWidget(self.modelo, 2, 3)
-        second_widget.layout().addWidget(self.observaciones, 3, 1, 1, 3)
-        second_widget.layout().addWidget(self.btn_agregar, 4, 1)
+
+        second_widget.layout().addWidget(self.btn_agregar, 3, 1)
+        second_widget.layout().addWidget(self.btn_cargar, 3, 2)
 
         # Password check
         password = ''
@@ -177,17 +182,15 @@ class MainWindow(qtw.QMainWindow):
                 self.close()
                 sys.exit()
             else:
-                if log_in != 'Cachucha':
+                if log_in != '1':
                     qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
                 else:
                     password = 'Ok'
 
-
-
-
         # Signals
 
         self.btn_agregar.clicked.connect(self.agregar_item)
+        self.btn_pedido.clicked.connect(self.terminar_pedido)
         # End main UI code
         self.show()
 
@@ -196,7 +199,7 @@ class MainWindow(qtw.QMainWindow):
         filename, _ = qtw.QFileDialog.getOpenFileName(
             self,
             'Select a CSV file to open…',
-            qtc.QDir.homePath(),
+            qtc.QDir.currentPath(),
             'CSV Files (*.csv) ;; All Files (*)'
         )
         if filename:
@@ -227,22 +230,22 @@ class MainWindow(qtw.QMainWindow):
 
     # Form methods
     def populate_list(self):
-        self.lista.clear()
+        # self.lista.clear()
         cliente = self.nombre_cliente.text()
         for pedido in self.pedidos.get('Pedido', []):
             orden = (
-                pedido['Artículo']
+                f"{pedido['Artículo']} ----  {pedido['Precio']}"
                 if pedido['Artículo']
                 else 'No hay artículos'
             )
-            self.lista.addItem(f'{cliente}: {orden}')
+            self.lista.addItem(f'{orden}')
 
     def agregar_item(self):
         pedido = {'Cliente': self.nombre_cliente.text(),
-                  'Artículo': self.tableview.selectedIndexes()[0].data()}
+                  'Artículo': self.tableview.selectedIndexes()[0].data(),
+                  'Precio': self.tableview.selectedIndexes()[1].data()}
         # id_us = int(self.tableview.model().data(pedido['Artículo']).toString())
-        print(pedido['Artículo'])
-
+        #print(len(self.tableview.selectedIndexes()))
         articulos = []
         numero_pedido = self.lista.currentRow()
         if numero_pedido == -1:
@@ -251,11 +254,16 @@ class MainWindow(qtw.QMainWindow):
             articulos[numero_pedido] = pedido
         self.pedidos['Pedido'] = articulos
         self.populate_list()
+        precio = float(self.total.text().split(':')[-1])
+        print(precio)
+        total = precio + float(pedido['Precio'])
+        print(total)
+        self.total.setText(f"Total: {total}")
 
-    def dummy(self):
-        index = self.tableview.selectedIndexes()[0]
+    def terminar_pedido(self):
+        self.lista.clear()
+        self.total.setText('Total: ')
 
-        print(index.data())
 
 if __name__ == '__main__':
     app = qtw.QApplication(sys.argv)
