@@ -121,10 +121,15 @@ class MainWindow(qtw.QMainWindow):
         # Dock widgets
         dock = qtw.QDockWidget('Pedido')
         self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock)
-
+        self.setDockNestingEnabled(True)
+        dock2 = qtw.QDockWidget('Filtros')
+        self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock2)
         filter_widget = qtw.QWidget()
         filter_widget.setLayout(qtw.QVBoxLayout())
+        second_widget = qtw.QWidget()
+        second_widget.setLayout(qtw.QGridLayout())
         dock.setWidget(filter_widget)
+        dock2.setWidget(second_widget)
 
         self.articulo = qtw.QComboBox()
         self.material = qtw.QComboBox()
@@ -133,28 +138,37 @@ class MainWindow(qtw.QMainWindow):
         self.observaciones = qtw.QTextEdit(placeholderText='Observaciones')
         self.nombre_cliente = qtw.QLineEdit(placeholderText='Nombre del cliente')
         self.numero_cliente = qtw.QLineEdit(placeholderText='Número de teléfono')
-        #self.tableWidget = qtw.QTableWidget()
-        #self.tableWidget.setSortingEnabled(True)
-        #self.tableWidget.setRowCount(20)
-        #self.tableWidget.setColumnCount(5)
-        #self.mostrar_tabla = qtw.QPushButton('Abrir tabla')
         # Agregar categorías
         self.material.addItems(
             ['Seleccione material...', 'Pino', 'Algarrobo']
         )
         # Botones
-        self.btn_agregar = qtw.QPushButton('Agregar/Editar')
+        self.btn_agregar = qtw.QPushButton('Agregar')
         self.btn_pedido = qtw.QPushButton('Hacer Pedido')
         self.btn_eliminar = qtw.QPushButton('Eliminar')
 
         filter_widget.layout().addWidget(self.nombre_cliente)
         filter_widget.layout().addWidget(self.numero_cliente)
         filter_widget.layout().addWidget(self.lista)
-        filter_widget.layout().addWidget(self.material)
-        filter_widget.layout().addWidget(self.articulo)
-        filter_widget.layout().addWidget(self.modelo)
-        filter_widget.layout().addWidget(self.btn_agregar)
-        filter_widget.layout().addWidget(self.observaciones)
+        filter_widget.layout().addWidget(self.btn_pedido)
+        second_widget.layout().addWidget(qtw.QLabel('Material'), 1, 1)
+        second_widget.layout().addWidget(self.material, 2, 1)
+        second_widget.layout().addWidget(qtw.QLabel('Artículo'), 1, 2)
+        second_widget.layout().addWidget(self.articulo, 2, 2)
+        second_widget.layout().addWidget(qtw.QLabel('Modelo'), 1, 3)
+
+        second_widget.layout().addWidget(self.modelo, 2, 3)
+        second_widget.layout().addWidget(self.observaciones, 3, 1, 1, 3)
+        second_widget.layout().addWidget(self.btn_agregar, 4, 1)
+
+        # User check
+        log_in = qtw.QMessageBox()
+        log_in.setWindowTitle('Ingreso')
+        log_in.setLayout(qtw.QGridLayout())
+        log_in.setWindowModality(qtc.Qt.WindowModal)
+        log_in.addButton(qtw.QMessageBox.Yes)
+
+        response = log_in.exec()
 
         # End main UI code
         self.show()
