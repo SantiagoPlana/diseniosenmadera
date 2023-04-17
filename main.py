@@ -11,6 +11,7 @@ class PedidoFinalizado(qtw.QDialog):
         super().__init__(modal=True)
         self.dic = dic
         self.setLayout(qtw.QFormLayout())
+        self.setWindowTitle('Detalle de venta')
         self.layout().addRow(
             qtw.QLabel('<h1>Detalle de venta</h1>'),
         )
@@ -26,7 +27,7 @@ class PedidoFinalizado(qtw.QDialog):
         self.accept_btn = qtw.QPushButton('Emitir')
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
         self.layout().addRow(self.accept_btn, self.cancel_btn)
-        
+
 
 class CsvTableModel(qtc.QAbstractTableModel):
     """The model for a CSV table."""
@@ -74,6 +75,8 @@ class CsvTableModel(qtc.QAbstractTableModel):
 
     def setData(self, index, value, role):
         if index.isValid() and role == qtc.Qt.EditRole:
+            if not value:
+                return False
             self._data[index.row()][index.column()] = value
             self.dataChanged.emit(index, index, [role])
             return True
@@ -159,7 +162,7 @@ class MainWindow(qtw.QMainWindow):
         dock.setWidget(filter_widget)
         dock2.setWidget(second_widget)
 
-        self.articulo = qtw.QComboBox()
+        self.articulo = qtw.QLineEdit()
         self.material = qtw.QComboBox()
         self.modelo = qtw.QComboBox()
         self.lista = qtw.QListWidget()
@@ -173,7 +176,7 @@ class MainWindow(qtw.QMainWindow):
         )
         self.modelo.addItems(['Seleccione modelo...', 'Placard 1,80', 'Placard 1,40',
                               'Barra L', 'Barra Recta'])
-        self.articulo.addItems(['Seleccione artículo...', 'Placard', 'Barra'])
+        # self.articulo.addItems(['Seleccione artículo...', 'Placard', 'Barra'])
 
         self.lista.setAlternatingRowColors(True)
         # self.lista.setFont()
@@ -215,6 +218,11 @@ class MainWindow(qtw.QMainWindow):
                 else:
                     password = 'Ok'
 
+        self.filter_proxy_model = qtc.QSortFilterProxyModel()
+
+        self.filter_proxy_model.setFilterCaseSensitivity(qtc.Qt.CaseInsensitive)
+        self.filter_proxy_model.setFilterKeyColumn(0)
+        self.articulo.textChanged.connect(self.filter_proxy_model.setFilterRegExp)
         # Signals
 
         self.btn_agregar.clicked.connect(self.agregar_art)
@@ -232,7 +240,8 @@ class MainWindow(qtw.QMainWindow):
         )
         if filename:
             self.model = CsvTableModel(filename)
-            self.tableview.setModel(self.model)
+            self.filter_proxy_model.setSourceModel(self.model)
+            self.tableview.setModel(self.filter_proxy_model)
 
     def save_file(self):
         if self.model:
@@ -255,6 +264,9 @@ class MainWindow(qtw.QMainWindow):
         num_rows = len(set(index.row() for index in selected))
         if selected:
             self.model.removeRows(selected[0].row(), num_rows, None)
+
+    def filtering(self, tipo, material):
+        self.model.itemData()
 
     # Form methods
     def populate_list(self):
