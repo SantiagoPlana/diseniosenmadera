@@ -1,9 +1,24 @@
 import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
-
 import csv
 
+
+class PedidoFinalizado(qtw.QFileDialog):
+    """File dialog for finished sale."""
+
+    def __init__(self, dic=dict):
+        super().__init__(modal=True)
+        self.dic = dic
+        self.setLayout(qtw.QFormLayout())
+        self.layout().addRow(
+            qtw.QLabel('<h1>Detalle de venta</h1>'),
+        )
+        self.key = self.dic.keys()
+        self.values = list(self.dic.values())
+        self.layout().addRow(f'<h3>Cliente: {self.values[-1]}</h3>')
+        for i in self.values[0]:
+            self.layout().addrow(f'')
 
 class CsvTableModel(qtc.QAbstractTableModel):
     """The model for a CSV table."""
@@ -24,8 +39,6 @@ class CsvTableModel(qtc.QAbstractTableModel):
         return len(self._headers)
 
     def data(self, index, role):
-        # original if statement:
-        # if role == qtc.Qt.DisplayRole:
         # Add EditRole so that the cell is not cleared when editing
         if role in (qtc.Qt.DisplayRole, qtc.Qt.EditRole):
             return self._data[index.row()][index.column()]
@@ -96,7 +109,12 @@ class CsvTableModel(qtc.QAbstractTableModel):
 class MainWindow(qtw.QMainWindow):
 
     model = None
-    pedidos = {}
+    pedidos = {'Cliente': '',
+               'Contacto': '',
+               'Artículos': [],
+               'Precios': [],
+               'Total': 0,
+               'Observaciones': ''}
 
     def __init__(self):
         """MainWindow constructor."""
@@ -149,6 +167,8 @@ class MainWindow(qtw.QMainWindow):
                               'Barra L', 'Barra Recta'])
         self.articulo.addItems(['Seleccione artículo...', 'Placard', 'Barra'])
 
+        self.lista.setAlternatingRowColors(True)
+        # self.lista.setFont()
         # Botones
         self.btn_agregar = qtw.QPushButton('Agregar Item')
         self.btn_pedido = qtw.QPushButton('Finalizar Pedido')
@@ -189,7 +209,7 @@ class MainWindow(qtw.QMainWindow):
 
         # Signals
 
-        self.btn_agregar.clicked.connect(self.agregar_item)
+        self.btn_agregar.clicked.connect(self.agregar_art)
         self.btn_pedido.clicked.connect(self.terminar_pedido)
         # End main UI code
         self.show()
@@ -231,40 +251,79 @@ class MainWindow(qtw.QMainWindow):
     # Form methods
     def populate_list(self):
         # self.lista.clear()
-        cliente = self.nombre_cliente.text()
         for pedido in self.pedidos.get('Pedido', []):
             orden = (
                 f"{pedido['Artículo']} ----  {pedido['Precio']}"
-                if pedido['Artículo']
-                else 'No hay artículos'
+                # if pedido['Artículo']
+                # else 'No hay artículos'
             )
             self.lista.addItem(f'{orden}')
 
     def agregar_item(self):
         pedido = {'Cliente': self.nombre_cliente.text(),
                   'Artículo': self.tableview.selectedIndexes()[0].data(),
-                  'Precio': self.tableview.selectedIndexes()[1].data()}
-
+                  'Precio': self.tableview.selectedIndexes()[1].data(),
+                  'Observaciones': self.observaciones.toPlainText()
+                  }
         articulos = []
         numero_pedido = self.lista.currentRow()
+        print(numero_pedido)
         if numero_pedido == -1:
             articulos.append(pedido)
         else:
             articulos[numero_pedido] = pedido
         self.pedidos['Pedido'] = articulos
-        self.populate_list()
+        # print(f'global: {self.pedidos}')
+        # print(f'local: {pedido}')
         precio = float(self.total.text().split(':')[-1])
-        print(precio)
         total = precio + float(pedido['Precio'])
         print(total)
         self.total.setText(f"Total: {total}")
+        self.populate_list()
+
+    def llenar_lista(self):
+        print('hey')
+        self.lista.clear()
+        for i in range(len(self.pedidos['Artículos'])):
+
+            self.lista.addItem(f"{self.pedidos['Artículos'][i]} --- {self.pedidos['Precios'][i]}")
+
+    def agregar_art(self):
+        self.pedidos['Cliente'] = self.nombre_cliente.text()
+        self.pedidos['Contacto'] = self.numero_cliente.text()
+        self.pedidos['Artículos'].append(self.tableview.selectedIndexes()[0].data())
+        self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
+        self.pedidos['Observaciones'] = self.observaciones.toPlainText()
+        print(self.pedidos)
+        # numero_pedido = self.lista.currentRow()
+        total = sum(self.pedidos['Precios'])
+        self.pedidos['Total'] = total
+        print(total)
+        print(self.pedidos)
+        self.total.setText(f"Total: {total}")
+        self.llenar_lista()
+
 
     def terminar_pedido(self):
+        # print(self.lista.count())
+        self.pedidos['Cliente'] = ''
+        self.pedidos['Contacto'] = ''
+        self.pedidos['Artículos'] = []
+        self.pedidos['Precios'] = []
+        self.pedidos['Observaciones'] = ''
+        self.pedidos['Total'] = 0
         self.lista.clear()
-        self.total.setText('Total: ')
+        self.total.setText('Total: 0')
         self.nombre_cliente.clear()
         self.numero_cliente.clear()
-        self.observaciones.clear()
+        self.observaciones.setPlainText('')
+
+        self.detalle(self.pedidos)
+
+    def detalle(self, dic):
+        """Instancia de clase de FileDialog con detalle de pedido"""
+        
+        pass
 
 
 if __name__ == '__main__':
