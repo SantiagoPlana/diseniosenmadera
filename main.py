@@ -4,7 +4,7 @@ from PyQt5 import QtCore as qtc
 import csv
 
 
-class PedidoFinalizado(qtw.QFileDialog):
+class PedidoFinalizado(qtw.QDialog):
     """File dialog for finished sale."""
 
     def __init__(self, dic=dict):
@@ -16,9 +16,17 @@ class PedidoFinalizado(qtw.QFileDialog):
         )
         self.key = self.dic.keys()
         self.values = list(self.dic.values())
-        self.layout().addRow(f'<h3>Cliente: {self.values[-1]}</h3>')
-        for i in self.values[0]:
-            self.layout().addrow(f'')
+        self.layout().addWidget(qtw.QLabel(f"<h3>Cliente: {self.dic['Cliente']}</h3>"))
+        for i in range(len(self.dic['Artículos'])):
+            self.layout().addWidget(
+                qtw.QLabel(f'{self.dic["Artículos"][i]} ------- {self.dic["Precios"][i]}'))
+        self.layout().addWidget(qtw.QLabel(' '))
+        self.layout().addWidget(qtw.QLabel(f"<b>Total:  {self.dic['Total']}</b>"))
+
+        self.accept_btn = qtw.QPushButton('Emitir')
+        self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
+        self.layout().addRow(self.accept_btn, self.cancel_btn)
+        
 
 class CsvTableModel(qtc.QAbstractTableModel):
     """The model for a CSV table."""
@@ -306,12 +314,12 @@ class MainWindow(qtw.QMainWindow):
 
     def terminar_pedido(self):
         # print(self.lista.count())
-        self.pedidos['Cliente'] = ''
-        self.pedidos['Contacto'] = ''
-        self.pedidos['Artículos'] = []
-        self.pedidos['Precios'] = []
-        self.pedidos['Observaciones'] = ''
-        self.pedidos['Total'] = 0
+        # self.pedidos['Cliente'] = ''
+        # self.pedidos['Contacto'] = ''
+        # self.pedidos['Artículos'] = []
+        # self.pedidos['Precios'] = []
+        # self.pedidos['Observaciones'] = ''
+        # self.pedidos['Total'] = 0
         self.lista.clear()
         self.total.setText('Total: 0')
         self.nombre_cliente.clear()
@@ -322,8 +330,15 @@ class MainWindow(qtw.QMainWindow):
 
     def detalle(self, dic):
         """Instancia de clase de FileDialog con detalle de pedido"""
-        
-        pass
+        dialog = PedidoFinalizado(dic)
+        dialog.exec()
+        self.pedidos['Cliente'] = ''
+        self.pedidos['Contacto'] = ''
+        self.pedidos['Artículos'] = []
+        self.pedidos['Precios'] = []
+        self.pedidos['Observaciones'] = ''
+        self.pedidos['Total'] = 0
+        # pass
 
 
 if __name__ == '__main__':
