@@ -151,10 +151,11 @@ class MainWindow(qtw.QMainWindow):
 
         # Dock widgets
         dock = qtw.QDockWidget('Pedido')
-        self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock)
-        self.setDockNestingEnabled(True)
         dock2 = qtw.QDockWidget('Filtros')
-        self.addDockWidget(qtc.Qt.TopDockWidgetArea, dock2)
+        self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock2)
+        self.setDockNestingEnabled(True)
+        # dock2 = qtw.QDockWidget('Filtros')
+        self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock)
         filter_widget = qtw.QWidget()
         filter_widget.setLayout(qtw.QVBoxLayout())
         second_widget = qtw.QWidget()
@@ -163,28 +164,28 @@ class MainWindow(qtw.QMainWindow):
         dock2.setWidget(second_widget)
 
         self.articulo = qtw.QLineEdit()
-        self.material = qtw.QComboBox()
-        self.modelo = qtw.QComboBox()
+        self.articulo.setStyleSheet('font-size: 15px;')
+        self.articulo.setFixedWidth(150)
+        # self.material = qtw.QComboBox()
+        # self.modelo = qtw.QComboBox()
         self.lista = qtw.QListWidget()
         self.observaciones = qtw.QTextEdit(placeholderText='Observaciones')
         self.nombre_cliente = qtw.QLineEdit(placeholderText='Nombre del cliente')
         self.numero_cliente = qtw.QLineEdit(placeholderText='Número de teléfono')
         self.total = qtw.QLabel('Total: 0')
         # Agregar categorías
-        self.material.addItems(
-            ['Seleccione material...', 'Pino', 'Algarrobo']
-        )
-        self.modelo.addItems(['Seleccione modelo...', 'Placard 1,80', 'Placard 1,40',
-                              'Barra L', 'Barra Recta'])
+        # self.material.addItems(['Seleccione material...', 'Pino', 'Algarrobo'])
+        # self.modelo.addItems(['Seleccione modelo...', 'Placard 1,80', 'Placard 1,40','Barra L', 'Barra Recta'])
         # self.articulo.addItems(['Seleccione artículo...', 'Placard', 'Barra'])
 
         self.lista.setAlternatingRowColors(True)
         # self.lista.setFont()
         # Botones
         self.btn_agregar = qtw.QPushButton('Agregar Item')
+        self.btn_agregar.setFixedWidth(100)
         self.btn_pedido = qtw.QPushButton('Finalizar Pedido')
         self.btn_eliminar = qtw.QPushButton('Eliminar')
-        self.btn_cargar = qtw.QPushButton('Cargar Tabla')
+        # self.btn_cargar = qtw.QPushButton('Cargar Tabla')
 
         filter_widget.layout().addWidget(self.nombre_cliente)
         filter_widget.layout().addWidget(self.numero_cliente)
@@ -192,16 +193,16 @@ class MainWindow(qtw.QMainWindow):
         filter_widget.layout().addWidget(self.total)
         filter_widget.layout().addWidget(self.observaciones)
         filter_widget.layout().addWidget(self.btn_pedido)
-        second_widget.layout().addWidget(qtw.QLabel('Material'), 1, 1)
-        second_widget.layout().addWidget(self.material, 2, 1)
-        second_widget.layout().addWidget(qtw.QLabel('Artículo'), 1, 2)
-        second_widget.layout().addWidget(self.articulo, 2, 2)
-        second_widget.layout().addWidget(qtw.QLabel('Modelo'), 1, 3)
+        # second_widget.layout().addWidget(qtw.QLabel('Material'), 1, 1)
+        # second_widget.layout().addWidget(self.material, 2, 1)
+        second_widget.layout().addWidget(qtw.QLabel('Artículo'), 1, 0)
+        second_widget.layout().addWidget(self.articulo, 2, 0)
+        # second_widget.layout().addWidget(qtw.QLabel('Modelo'), 1, 3)
 
-        second_widget.layout().addWidget(self.modelo, 2, 3)
+        # second_widget.layout().addWidget(self.modelo, 2, 3)
 
-        second_widget.layout().addWidget(self.btn_agregar, 3, 1)
-        second_widget.layout().addWidget(self.btn_cargar, 3, 2)
+        second_widget.layout().addWidget(self.btn_agregar, 3, 0)
+        # second_widget.layout().addWidget(self.btn_cargar, 3, 2)
 
         # Password check
         password = ''
