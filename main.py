@@ -9,24 +9,35 @@ class PedidoFinalizado(qtw.QDialog):
 
     def __init__(self, dic=dict):
         super().__init__(modal=True)
+        self.setFixedSize(500, 400)
+        v_box = qtw.QVBoxLayout()
+        h_box = qtw.QHBoxLayout()
         self.dic = dic
-        self.setLayout(qtw.QFormLayout())
-        self.setWindowTitle('Detalle de venta')
-        self.layout().addRow(
-            qtw.QLabel('<h1>Detalle de venta</h1>'),
+        self.setLayout(v_box)
+        self.setWindowTitle('Presupuesto')
+        self.layout().addWidget(
+            qtw.QLabel('<h1>Presupuesto</h1>'),
         )
         self.key = self.dic.keys()
         self.values = list(self.dic.values())
-        self.layout().addWidget(qtw.QLabel(f"<h3>Cliente: {self.dic['Cliente']}</h3>"))
+        date = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
+        time = qtc.QTime().currentTime().toString('hh:mm')
+        self.layout().addWidget(qtw.QLabel(
+            f'<h3>Fecha: {date} - {time}</h3>'))
+        v_box.addLayout(h_box)
+        h_box.addWidget(qtw.QLabel(f"<h3>Cliente: {self.dic['Cliente']}</h3>"))
+        h_box.addWidget(qtw.QLabel(f"<h3>Contacto: {self.dic['Contacto']}</h3>"))
         for i in range(len(self.dic['Artículos'])):
+            # self.layout().setHorizontalSpacing(200)
             self.layout().addWidget(
-                qtw.QLabel(f'{self.dic["Artículos"][i]} ------- {self.dic["Precios"][i]}'))
+                qtw.QLabel(f'{self.dic["Artículos"][i]} {self.dic["Precios"][i]}'))
         self.layout().addWidget(qtw.QLabel(' '))
         self.layout().addWidget(qtw.QLabel(f"<b>Total:  {self.dic['Total']}</b>"))
 
         self.accept_btn = qtw.QPushButton('Emitir')
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
-        self.layout().addRow(self.accept_btn, self.cancel_btn)
+        self.layout().addWidget(self.accept_btn)
+        self.layout().addWidget(self.cancel_btn)
 
 
 class CsvTableModel(qtc.QAbstractTableModel):
@@ -132,7 +143,7 @@ class MainWindow(qtw.QMainWindow):
         super().__init__()
         # Main UI
         self.setWindowTitle('Diseños en Madera')
-        self.resize(1000, 600)
+        self.resize(1380, 600)
         self.tableview = qtw.QTableView()
         self.tableview.setSortingEnabled(True)
         self.tableview.setAlternatingRowColors(True)
