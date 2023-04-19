@@ -9,7 +9,7 @@ class PedidoFinalizado(qtw.QDialog):
 
     def __init__(self, dic=dict):
         super().__init__(modal=True)
-        self.setFixedSize(500, 400)
+        self.setMinimumSize(500, 400)
         v_box = qtw.QVBoxLayout()
         h_box = qtw.QHBoxLayout()
         self.dic = dic
@@ -27,10 +27,13 @@ class PedidoFinalizado(qtw.QDialog):
         v_box.addLayout(h_box)
         h_box.addWidget(qtw.QLabel(f"<h3>Cliente: {self.dic['Cliente']}</h3>"))
         h_box.addWidget(qtw.QLabel(f"<h3>Contacto: {self.dic['Contacto']}</h3>"))
+        v_box.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"))
         for i in range(len(self.dic['Artículos'])):
             # self.layout().setHorizontalSpacing(200)
             self.layout().addWidget(
-                qtw.QLabel(f'{self.dic["Artículos"][i]} {self.dic["Precios"][i]}'))
+                qtw.QLabel(f'{self.dic["Artículos"][i]}'))
+            self.layout().addWidget(
+                qtw.QLabel(f'{self.dic["Precios"][i]}'))
         self.layout().addWidget(qtw.QLabel(' '))
         self.layout().addWidget(qtw.QLabel(f"<b>Total:  {self.dic['Total']}</b>"))
 
@@ -314,7 +317,7 @@ class MainWindow(qtw.QMainWindow):
         self.populate_list()
 
     def llenar_lista(self):
-        print('hey')
+        # print('hey')
         self.lista.clear()
         for i in range(len(self.pedidos['Artículos'])):
 
@@ -323,27 +326,38 @@ class MainWindow(qtw.QMainWindow):
     def agregar_art(self):
         self.pedidos['Cliente'] = self.nombre_cliente.text()
         self.pedidos['Contacto'] = self.numero_cliente.text()
-        self.pedidos['Artículos'].append(self.tableview.selectedIndexes()[0].data())
-        self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
+        len(self.tableview.selectedIndexes())
+        if len(self.tableview.selectedIndexes()) == 2:
+            self.pedidos['Artículos'].append(self.tableview.selectedIndexes()[0].data())
+            self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
+
+        elif len(self.tableview.selectedIndexes()) > 2:
+            msg = qtw.QMessageBox()
+            msg.setIcon(qtw.QMessageBox.Critical)
+            # msg.setText('Error')
+            msg.setText('Seleccione solo un modelo y el precio deseado')
+            msg.setWindowTitle('Error')
+            msg.exec_()
+        else:
+            msg = qtw.QMessageBox()
+            msg.setIcon(qtw.QMessageBox.Critical)
+            # msg.setText('Error')
+            msg.setText('Seleccione un modelo y el precio deseado')
+            msg.setWindowTitle('Error')
+            msg.exec_()
+
         self.pedidos['Observaciones'] = self.observaciones.toPlainText()
         print(self.pedidos)
         # numero_pedido = self.lista.currentRow()
         total = sum(self.pedidos['Precios'])
         self.pedidos['Total'] = total
-        print(total)
-        print(self.pedidos)
+
+        #print(self.tableview.row)
         self.total.setText(f"Total: {total}")
         self.llenar_lista()
 
 
     def terminar_pedido(self):
-        # print(self.lista.count())
-        # self.pedidos['Cliente'] = ''
-        # self.pedidos['Contacto'] = ''
-        # self.pedidos['Artículos'] = []
-        # self.pedidos['Precios'] = []
-        # self.pedidos['Observaciones'] = ''
-        # self.pedidos['Total'] = 0
         self.lista.clear()
         self.total.setText('Total: 0')
         self.nombre_cliente.clear()
