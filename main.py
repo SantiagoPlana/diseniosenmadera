@@ -178,10 +178,11 @@ class MainWindow(qtw.QMainWindow):
         dock2.setWidget(second_widget)
 
         self.articulo = qtw.QLineEdit()
-        self.articulo.setStyleSheet('font-size: 15px;')
+        # self.articulo.setStyleSheet('font-size: 15px;')
         self.articulo.setFixedWidth(150)
         # self.material = qtw.QComboBox()
         # self.modelo = qtw.QComboBox()
+        self.filtrar_por = qtw.QComboBox()
         self.lista = qtw.QListWidget()
         self.observaciones = qtw.QTextEdit(placeholderText='Observaciones')
         self.nombre_cliente = qtw.QLineEdit(placeholderText='Nombre del cliente')
@@ -211,6 +212,8 @@ class MainWindow(qtw.QMainWindow):
         # second_widget.layout().addWidget(self.material, 2, 1)
         second_widget.layout().addWidget(qtw.QLabel('Artículo'), 1, 0)
         second_widget.layout().addWidget(self.articulo, 2, 0)
+        second_widget.layout().addWidget(qtw.QLabel('Filtrar por'), 1, 1)
+        second_widget.layout().addWidget(self.filtrar_por, 2, 1)
         # second_widget.layout().addWidget(qtw.QLabel('Modelo'), 1, 3)
 
         # second_widget.layout().addWidget(self.modelo, 2, 3)
@@ -238,6 +241,7 @@ class MainWindow(qtw.QMainWindow):
         self.filter_proxy_model.setFilterCaseSensitivity(qtc.Qt.CaseInsensitive)
         self.filter_proxy_model.setFilterKeyColumn(0)
         self.articulo.textChanged.connect(self.filter_proxy_model.setFilterRegExp)
+
         # Signals
 
         self.btn_agregar.clicked.connect(self.agregar_art)
@@ -257,6 +261,8 @@ class MainWindow(qtw.QMainWindow):
             self.model = CsvTableModel(filename)
             self.filter_proxy_model.setSourceModel(self.model)
             self.tableview.setModel(self.filter_proxy_model)
+            self.filtrar_por.clear()
+            self.filtrar_por.addItems(self.model._headers)
 
     def save_file(self):
         if self.model:
@@ -284,38 +290,6 @@ class MainWindow(qtw.QMainWindow):
         self.model.itemData()
 
     # Form methods
-    def populate_list(self):
-        # self.lista.clear()
-        for pedido in self.pedidos.get('Pedido', []):
-            orden = (
-                f"{pedido['Artículo']} ----  {pedido['Precio']}"
-                # if pedido['Artículo']
-                # else 'No hay artículos'
-            )
-            self.lista.addItem(f'{orden}')
-
-    def agregar_item(self):
-        pedido = {'Cliente': self.nombre_cliente.text(),
-                  'Artículo': self.tableview.selectedIndexes()[0].data(),
-                  'Precio': self.tableview.selectedIndexes()[1].data(),
-                  'Observaciones': self.observaciones.toPlainText()
-                  }
-        articulos = []
-        numero_pedido = self.lista.currentRow()
-        print(numero_pedido)
-        if numero_pedido == -1:
-            articulos.append(pedido)
-        else:
-            articulos[numero_pedido] = pedido
-        self.pedidos['Pedido'] = articulos
-        # print(f'global: {self.pedidos}')
-        # print(f'local: {pedido}')
-        precio = float(self.total.text().split(':')[-1])
-        total = precio + float(pedido['Precio'])
-        print(total)
-        self.total.setText(f"Total: {total}")
-        self.populate_list()
-
     def llenar_lista(self):
         # print('hey')
         self.lista.clear()
@@ -326,7 +300,6 @@ class MainWindow(qtw.QMainWindow):
     def agregar_art(self):
         self.pedidos['Cliente'] = self.nombre_cliente.text()
         self.pedidos['Contacto'] = self.numero_cliente.text()
-        len(self.tableview.selectedIndexes())
         if len(self.tableview.selectedIndexes()) == 2:
             self.pedidos['Artículos'].append(self.tableview.selectedIndexes()[0].data())
             self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
@@ -347,15 +320,13 @@ class MainWindow(qtw.QMainWindow):
             msg.exec_()
 
         self.pedidos['Observaciones'] = self.observaciones.toPlainText()
-        print(self.pedidos)
+        # print(self.pedidos)
         # numero_pedido = self.lista.currentRow()
         total = sum(self.pedidos['Precios'])
         self.pedidos['Total'] = total
 
-        #print(self.tableview.row)
         self.total.setText(f"Total: {total}")
         self.llenar_lista()
-
 
     def terminar_pedido(self):
         self.lista.clear()
