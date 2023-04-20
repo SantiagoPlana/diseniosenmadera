@@ -2,7 +2,7 @@ import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
 import csv
-
+import pandas as pd
 
 class PedidoFinalizado(qtw.QDialog):
     """File dialog for finished sale."""
@@ -134,7 +134,8 @@ class CsvTableModel(qtc.QAbstractTableModel):
 class MainWindow(qtw.QMainWindow):
 
     model = None
-    pedidos = {'Cliente': '',
+    pedidos = {'Fecha': '',
+               'Cliente': '',
                'Contacto': '',
                'Artículos': [],
                'Precios': [],
@@ -189,10 +190,6 @@ class MainWindow(qtw.QMainWindow):
         self.numero_cliente = qtw.QLineEdit(placeholderText='Número de teléfono')
         self.total = qtw.QLabel('Total: 0')
         # Agregar categorías
-        # self.material.addItems(['Seleccione material...', 'Pino', 'Algarrobo'])
-        # self.modelo.addItems(['Seleccione modelo...', 'Placard 1,80', 'Placard 1,40','Barra L', 'Barra Recta'])
-        # self.articulo.addItems(['Seleccione artículo...', 'Placard', 'Barra'])
-
         self.lista.setAlternatingRowColors(True)
         # self.lista.setFont()
         # Botones
@@ -247,6 +244,7 @@ class MainWindow(qtw.QMainWindow):
 
         self.filtrar_por.currentTextChanged.connect(
             self.filter)
+
         # End main UI code
         self.show()
 
@@ -287,9 +285,6 @@ class MainWindow(qtw.QMainWindow):
         if selected:
             self.model.removeRows(selected[0].row(), num_rows, None)
 
-    def filtering(self, tipo, material):
-        self.model.itemData()
-
     # Form methods
     def llenar_lista(self):
         # print('hey')
@@ -299,9 +294,10 @@ class MainWindow(qtw.QMainWindow):
             self.lista.addItem(f"{self.pedidos['Artículos'][i]} --- {self.pedidos['Precios'][i]}")
 
     def agregar_art(self):
-
+        self.pedidos['Fecha'] = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
         self.pedidos['Cliente'] = self.nombre_cliente.text()
         self.pedidos['Contacto'] = self.numero_cliente.text()
+        self.pedidos['Observaciones'] = self.observaciones.toPlainText()
         if len(self.tableview.selectedIndexes()) == 2:
             self.pedidos['Artículos'].append(self.tableview.selectedIndexes()[0].data())
             self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
@@ -320,8 +316,6 @@ class MainWindow(qtw.QMainWindow):
             msg.setText('Seleccione un modelo y el precio deseado')
             msg.setWindowTitle('Error')
             msg.exec_()
-
-        self.pedidos['Observaciones'] = self.observaciones.toPlainText()
         # print(self.pedidos)
         # numero_pedido = self.lista.currentRow()
         total = sum(self.pedidos['Precios'])
@@ -336,13 +330,21 @@ class MainWindow(qtw.QMainWindow):
         self.nombre_cliente.clear()
         self.numero_cliente.clear()
         self.observaciones.setPlainText('')
-
+        self.cargar_venta()
         self.detalle(self.pedidos)
+
+    def cargar_venta(self):
+        ventas = pd.read_csv('Ventas_nuevo.csv')
+        ventas.loc[len(ventas)+1, self.pedidos.keys()] = self.pedidos.values()
+        
+        ventas.to_csv('Ventas_nuevo.csv', index=False)
+
 
     def detalle(self, dic):
         """Instancia de clase de FileDialog con detalle de pedido"""
         dialog = PedidoFinalizado(dic)
         dialog.exec()
+        self.pedidos['Fecha'] = ''
         self.pedidos['Cliente'] = ''
         self.pedidos['Contacto'] = ''
         self.pedidos['Artículos'] = []
