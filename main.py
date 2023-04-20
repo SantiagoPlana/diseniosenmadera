@@ -155,15 +155,21 @@ class MainWindow(qtw.QMainWindow):
 
         # Menu
         menu = self.menuBar()
-        file_menu = menu.addMenu('File')
-        file_menu.addAction('Open', self.select_file)
-        file_menu.addAction('Save', self.save_file)
+        file_menu = menu.addMenu('Archivo')
+        open_action = file_menu.addAction('Cargar', self.select_file)
+        file_menu.addAction('Guardar', self.save_file)
 
         edit_menu = menu.addMenu('Edit')
         edit_menu.addAction('Insert Above', self.insert_above)
         edit_menu.addAction('Insert Below', self.insert_below)
         edit_menu.addAction('Remove Row(s)', self.remove_rows)
 
+        open_ventas = file_menu.addAction('Cargar Ventas', self.cargar_tabla_ventas)
+        toolbar = self.addToolBar('Toolbar')
+        toolbar.addAction(open_action)
+        toolbar.addAction(open_ventas)
+        toolbar.setFloatable(False)
+        toolbar.setAllowedAreas(qtc.Qt.TopToolBarArea)
         # Dock widgets
         dock = qtw.QDockWidget('Pedido')
         dock2 = qtw.QDockWidget('Filtros')
@@ -252,7 +258,7 @@ class MainWindow(qtw.QMainWindow):
     def select_file(self):
         filename, _ = qtw.QFileDialog.getOpenFileName(
             self,
-            'Select a CSV file to open…',
+            'Elija un archivo CSV para abrir…',
             qtc.QDir.currentPath(),
             'CSV Files (*.csv) ;; All Files (*)'
         )
@@ -262,6 +268,14 @@ class MainWindow(qtw.QMainWindow):
             self.tableview.setModel(self.filter_proxy_model)
             self.filtrar_por.clear()
             self.filtrar_por.addItems(self.model._headers)
+
+    def cargar_tabla_ventas(self):
+        filename = 'Ventas_nuevo.csv'
+        self.model = CsvTableModel(filename)
+        self.filter_proxy_model.setSourceModel(self.model)
+        self.tableview.setModel(self.filter_proxy_model)
+        self.filtrar_por.clear()
+        self.filtrar_por.addItems(self.model._headers)
 
     def save_file(self):
         if self.model:
@@ -335,8 +349,9 @@ class MainWindow(qtw.QMainWindow):
 
     def cargar_venta(self):
         ventas = pd.read_csv('Ventas_nuevo.csv')
-        ventas.loc[len(ventas)+1, self.pedidos.keys()] = self.pedidos.values()
-        
+
+        ventas.loc[len(ventas)+1, self.pedidos.keys()] = list(self.pedidos.values())
+        ventas.fillna(value='Sin Detalle', axis=0, inplace=True)
         ventas.to_csv('Ventas_nuevo.csv', index=False)
 
 
