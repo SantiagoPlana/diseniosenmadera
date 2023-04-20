@@ -210,7 +210,7 @@ class MainWindow(qtw.QMainWindow):
         filter_widget.layout().addWidget(self.btn_pedido)
         # second_widget.layout().addWidget(qtw.QLabel('Material'), 1, 1)
         # second_widget.layout().addWidget(self.material, 2, 1)
-        second_widget.layout().addWidget(qtw.QLabel('Artículo'), 1, 0)
+        second_widget.layout().addWidget(qtw.QLabel('Filtro'), 1, 0)
         second_widget.layout().addWidget(self.articulo, 2, 0)
         second_widget.layout().addWidget(qtw.QLabel('Filtrar por'), 1, 1)
         second_widget.layout().addWidget(self.filtrar_por, 2, 1)
@@ -242,10 +242,11 @@ class MainWindow(qtw.QMainWindow):
         self.filter_proxy_model.setFilterKeyColumn(0)
         self.articulo.textChanged.connect(self.filter_proxy_model.setFilterRegExp)
 
-        # Signals
-
         self.btn_agregar.clicked.connect(self.agregar_art)
         self.btn_pedido.clicked.connect(self.terminar_pedido)
+
+        self.filtrar_por.currentTextChanged.connect(
+            self.filter)
         # End main UI code
         self.show()
 
@@ -298,6 +299,7 @@ class MainWindow(qtw.QMainWindow):
             self.lista.addItem(f"{self.pedidos['Artículos'][i]} --- {self.pedidos['Precios'][i]}")
 
     def agregar_art(self):
+
         self.pedidos['Cliente'] = self.nombre_cliente.text()
         self.pedidos['Contacto'] = self.numero_cliente.text()
         if len(self.tableview.selectedIndexes()) == 2:
@@ -348,6 +350,11 @@ class MainWindow(qtw.QMainWindow):
         self.pedidos['Observaciones'] = ''
         self.pedidos['Total'] = 0
         # pass
+
+    @qtc.pyqtSlot()
+    def filter(self):
+        index = self.filtrar_por.currentIndex()
+        self.filter_proxy_model.setFilterKeyColumn(index)
 
 
 if __name__ == '__main__':
