@@ -11,43 +11,56 @@ class PedidoFinalizado(qtw.QDialog):
 
     def __init__(self, dic=dict):
         super().__init__(modal=True)
-        self.setMinimumSize(500, 400)
-        v_box = qtw.QVBoxLayout()
+        self.setMinimumSize(400, 400)
+        grid = qtw.QGridLayout()
         h_box = qtw.QHBoxLayout()
         self.dic = dic
-        self.setLayout(v_box)
+        self.setLayout(grid)
         self.setWindowTitle('Presupuesto')
-        self.layout().addWidget(
-            qtw.QLabel('<h1>Presupuesto</h1>'),
-        )
         self.pixmap = QPixmap('diseñosenmadera1.png')
         self.image = qtw.QLabel(self)
         self.image.setPixmap(self.pixmap)
-        self.image.resize(5, 5)
-        self.layout().addWidget(self.image)
+        self.image.setFixedSize(550, 140)
         self.key = self.dic.keys()
         self.values = list(self.dic.values())
         date = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
         time = qtc.QTime().currentTime().toString('hh:mm')
-        self.layout().addWidget(qtw.QLabel(
-            f'<h3>Fecha: {date} - {time}</h3>'))
-        v_box.addLayout(h_box)
-        h_box.addWidget(qtw.QLabel(f"<h3>Cliente: {self.dic['Cliente']}</h3>"))
-        h_box.addWidget(qtw.QLabel(f"<h3>Contacto: {self.dic['Contacto']}</h3>"))
-        v_box.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"))
-        for i in range(len(self.dic['Articulos'])):
-            # self.layout().setHorizontalSpacing(200)
-            self.layout().addWidget(
-                qtw.QLabel(f'{self.dic["Articulos"][i]}'))
-            self.layout().addWidget(
-                qtw.QLabel(f'{self.dic["Precios"][i]}'))
-        self.layout().addWidget(qtw.QLabel(' '))
-        self.layout().addWidget(qtw.QLabel(f"<b>Total:  {self.dic['Total']}</b>"))
 
         self.accept_btn = qtw.QPushButton('Emitir')
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
-        self.layout().addWidget(self.accept_btn)
-        self.layout().addWidget(self.cancel_btn)
+
+        # Layout
+        grid.addWidget(
+            qtw.QLabel('<h1>Presupuesto</h1>'), 1, 0
+        )
+        grid.addWidget(self.image, 2, 0, 1, 3)
+        grid.addWidget(qtw.QLabel(
+            f'<h3>Fecha: {date}</h3>'), 3, 0)
+        grid.addWidget(qtw.QLabel(f"<h3>Cliente: {self.dic['Cliente']}</h3>"), 3, 1)
+        grid.addWidget(qtw.QLabel(f"<h3>Contacto: {self.dic['Contacto']}</h3>"), 3, 2)
+        grid.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"), 5, 0)
+        count = 6
+        for i in range(len(self.dic['Articulos'])):
+            # self.layout().setHorizontalSpacing(200)
+            grid.addWidget(
+                qtw.QLabel(f'{self.dic["Articulos"][i]}'), count, 0)
+            grid.addWidget(
+                qtw.QLabel(f'{self.dic["Precios"][i]}'), count, 2)
+            count += 1
+        grid.addWidget(qtw.QLabel(' '), count, 0, 1, 4)
+        grid.addWidget(qtw.QLabel(f"<b>Total:  {self.dic['Total']}</b>"), count+1, 2)
+        grid.addWidget(qtw.QLabel(' '), count + 2, 0)
+        grid.addWidget(self.accept_btn, count + 3, 0)
+        grid.addWidget(self.cancel_btn, count + 3, 0)
+
+    def agregate_items(self):
+        item_dic = {}
+        for i in self.dic['Articulos']:
+            if not i in item_dic:
+                item_dic[i] = 1
+            else:
+                item_dic[i] += 1
+
 
 
 class CsvTableModel(qtc.QAbstractTableModel):
@@ -165,6 +178,7 @@ class MainWindow(qtw.QMainWindow):
                     qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
                 else:
                     password = 'Ok'
+
         # Main UI
         self.setWindowTitle('Diseños en Madera')
         self.resize(1380, 600)
@@ -190,6 +204,8 @@ class MainWindow(qtw.QMainWindow):
         toolbar.setAllowedAreas(qtc.Qt.TopToolBarArea)
 
         # Dock widgets
+        grid_1 = qtw.QGridLayout()
+        grid_2 = qtw.QGridLayout()
 
         dock = qtw.QDockWidget('Pedido')
         dock2 = qtw.QDockWidget('Filtros')
@@ -198,12 +214,12 @@ class MainWindow(qtw.QMainWindow):
         # dock2 = qtw.QDockWidget('Filtros')
         self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock)
         filter_widget = qtw.QWidget()
-        filter_widget.setLayout(qtw.QGridLayout())
+        filter_widget.setLayout(grid_1)
         second_widget = qtw.QWidget()
-        second_widget.setLayout(qtw.QGridLayout())
+        second_widget.setLayout(grid_2)
         dock.setWidget(filter_widget)
         dock2.setWidget(second_widget)
-        h_box = qtw.QHBoxLayout()
+
         self.articulo = qtw.QLineEdit()
         # self.articulo.setStyleSheet('font-size: 15px;')
         self.articulo.setFixedWidth(150)
@@ -241,12 +257,6 @@ class MainWindow(qtw.QMainWindow):
         second_widget.layout().addWidget(qtw.QLabel('Filtrar por'), 1, 1)
         second_widget.layout().addWidget(self.filtrar_por, 2, 1)
         # second_widget.layout().addWidget(qtw.QLabel('Modelo'), 1, 3)
-
-        # second_widget.layout().addWidget(self.modelo, 2, 3)
-
-        #second_widget.layout().addWidget(self.btn_agregar, 3, 0)
-        #second_widget.layout().addWidget(self.btn_eliminar, 3, 1)
-        # second_widget.layout().addWidget(self.btn_cargar, 3, 2)
 
         self.filter_proxy_model = qtc.QSortFilterProxyModel()
 
@@ -412,12 +422,11 @@ class MainWindow(qtw.QMainWindow):
     def eliminar_item(self):
         row = self.lista.currentRow()
         data = self.lista.currentIndex().data()
-        item = data.split('---')[0].strip(' ')
-        precio = data.split('---')[1].strip(' ')
         del(self.pedidos['Articulos'][row])
         del(self.pedidos['Precios'][row])
-
         self.llenar_lista()
+
+
 
 
     @qtc.pyqtSlot()
