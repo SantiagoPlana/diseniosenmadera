@@ -56,7 +56,7 @@ class CsvTableModel(qtc.QAbstractTableModel):
     def __init__(self, csv_file):
         super().__init__()
         self.filename = csv_file
-        with open(self.filename) as fh:
+        with open(self.filename, encoding='utf-8') as fh:
             csvreader = csv.reader(fh)
             self._headers = next(csvreader)
             self._data = list(csvreader)
@@ -98,7 +98,7 @@ class CsvTableModel(qtc.QAbstractTableModel):
         if index.isValid() and role == qtc.Qt.EditRole:
             if not value:
                 return False
-            self._data[index.row()][index.column()] = value
+            self._data[index.row()][index.column()] = value.encode('latin-1')
             self.dataChanged.emit(index, index, [role])
             return True
         else:
