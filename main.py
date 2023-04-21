@@ -151,6 +151,20 @@ class MainWindow(qtw.QMainWindow):
     def __init__(self):
         """MainWindow constructor."""
         super().__init__()
+        # Password check
+        password = ''
+        while password != 'Ok':
+            log_in, ok = qtw.QInputDialog.getText(self, "Ingreso",
+                                                  "Contraseña:", qtw.QLineEdit.Password,
+                                                  )
+            if not ok:
+                self.close()
+                sys.exit()
+            else:
+                if log_in != '1':
+                    qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
+                else:
+                    password = 'Ok'
         # Main UI
         self.setWindowTitle('Diseños en Madera')
         self.resize(1380, 600)
@@ -176,6 +190,7 @@ class MainWindow(qtw.QMainWindow):
         toolbar.setAllowedAreas(qtc.Qt.TopToolBarArea)
 
         # Dock widgets
+
         dock = qtw.QDockWidget('Pedido')
         dock2 = qtw.QDockWidget('Filtros')
         self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock2)
@@ -183,12 +198,12 @@ class MainWindow(qtw.QMainWindow):
         # dock2 = qtw.QDockWidget('Filtros')
         self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock)
         filter_widget = qtw.QWidget()
-        filter_widget.setLayout(qtw.QVBoxLayout())
+        filter_widget.setLayout(qtw.QGridLayout())
         second_widget = qtw.QWidget()
         second_widget.setLayout(qtw.QGridLayout())
         dock.setWidget(filter_widget)
         dock2.setWidget(second_widget)
-
+        h_box = qtw.QHBoxLayout()
         self.articulo = qtw.QLineEdit()
         # self.articulo.setStyleSheet('font-size: 15px;')
         self.articulo.setFixedWidth(150)
@@ -210,12 +225,15 @@ class MainWindow(qtw.QMainWindow):
         self.btn_eliminar = qtw.QPushButton('Eliminar')
         # self.btn_cargar = qtw.QPushButton('Cargar Tabla')
 
-        filter_widget.layout().addWidget(self.nombre_cliente)
-        filter_widget.layout().addWidget(self.numero_cliente)
-        filter_widget.layout().addWidget(self.lista)
-        filter_widget.layout().addWidget(self.total)
-        filter_widget.layout().addWidget(self.observaciones)
-        filter_widget.layout().addWidget(self.btn_pedido)
+        filter_widget.layout().addWidget(self.nombre_cliente, 1, 0)
+        filter_widget.layout().addWidget(self.numero_cliente, 2, 0)
+        filter_widget.layout().addWidget(self.lista, 3, 0, 1, 4)
+        filter_widget.layout().addWidget(self.total, 4, 0)
+        filter_widget.layout().addWidget(self.btn_agregar, 5, 0)
+        filter_widget.layout().addWidget(self.btn_eliminar, 5, 1)
+
+        filter_widget.layout().addWidget(self.observaciones, 6, 0, 1, 4)
+        filter_widget.layout().addWidget(self.btn_pedido, 7, 0)
         # second_widget.layout().addWidget(qtw.QLabel('Material'), 1, 1)
         # second_widget.layout().addWidget(self.material, 2, 1)
         second_widget.layout().addWidget(qtw.QLabel('Filtro'), 1, 0)
@@ -226,23 +244,9 @@ class MainWindow(qtw.QMainWindow):
 
         # second_widget.layout().addWidget(self.modelo, 2, 3)
 
-        second_widget.layout().addWidget(self.btn_agregar, 3, 0)
+        #second_widget.layout().addWidget(self.btn_agregar, 3, 0)
+        #second_widget.layout().addWidget(self.btn_eliminar, 3, 1)
         # second_widget.layout().addWidget(self.btn_cargar, 3, 2)
-
-        # Password check
-        password = ''
-        while password != 'Ok':
-            log_in, ok = qtw.QInputDialog.getText(self, "Ingreso",
-                                                  "Contraseña:", qtw.QLineEdit.Password,
-                                                  )
-            if not ok:
-                self.close()
-                sys.exit()
-            else:
-                if log_in != '1':
-                    qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
-                else:
-                    password = 'Ok'
 
         self.filter_proxy_model = qtc.QSortFilterProxyModel()
 
@@ -251,6 +255,7 @@ class MainWindow(qtw.QMainWindow):
         self.articulo.textChanged.connect(self.filter_proxy_model.setFilterRegExp)
 
         self.btn_agregar.clicked.connect(self.agregar_art)
+        self.btn_eliminar.clicked.connect(self.eliminar_item)
         self.btn_pedido.clicked.connect(self.terminar_pedido)
 
         self.filtrar_por.currentTextChanged.connect(
@@ -403,6 +408,17 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos[k] = []
             else:
                 self.pedidos[k] = ''
+
+    def eliminar_item(self):
+        row = self.lista.currentRow()
+        data = self.lista.currentIndex().data()
+        item = data.split('---')[0].strip(' ')
+        precio = data.split('---')[1].strip(' ')
+        del(self.pedidos['Articulos'][row])
+        del(self.pedidos['Precios'][row])
+
+        self.llenar_lista()
+
 
     @qtc.pyqtSlot()
     def filter(self):
