@@ -289,14 +289,20 @@ class MainWindow(qtw.QMainWindow):
     # Methods for insert/remove
 
     def insert_above(self):
-        selected = self.tableview.selectedIndexes()
-        row = selected[0].row() if selected else 0
-        self.model.insertRows(row, 1, None)
+        try:
+            selected = self.tableview.selectedIndexes()
+            row = selected[0].row() if selected else 0
+            self.model.insertRows(row, 1, None)
+        except Exception as e:
+            pass
 
     def insert_below(self):
-        selected = self.tableview.selectedIndexes()
-        row = selected[-1].row() if selected else self.model.rowCount(None)
-        self.model.insertRows(row + 1, 1, None)
+        try:
+            selected = self.tableview.selectedIndexes()
+            row = selected[-1].row() if selected else self.model.rowCount(None)
+            self.model.insertRows(row + 1, 1, None)
+        except Exception as e:
+            pass
 
     def remove_rows(self):
         selected = self.tableview.selectedIndexes()
@@ -306,19 +312,24 @@ class MainWindow(qtw.QMainWindow):
 
     # Form methods
     def llenar_lista(self):
-        # print('hey')
         self.lista.clear()
-        for i in range(len(self.pedidos['Articulos'])):
-            self.lista.addItem(f"{self.pedidos['Articulos'][i]} --- {self.pedidos['Precios'][i]}")
+        if len(self.pedidos['Articulos']) > 0:
+            for i in range(len(self.pedidos['Articulos'])):
+                self.lista.addItem(f"{self.pedidos['Articulos'][i]} --- {self.pedidos['Precios'][i]}")
 
     def agregar_art(self):
-        self.pedidos['Fecha'] = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
-        self.pedidos['Cliente'] = self.nombre_cliente.text()
-        self.pedidos['Contacto'] = self.numero_cliente.text()
-        self.pedidos['Observaciones'] = self.observaciones.toPlainText()
+        global total
         if len(self.tableview.selectedIndexes()) == 2:
-            self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[0].data())
-            self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
+            try:
+                self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
+                self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[0].data())
+                total = sum(self.pedidos['Precios'])
+                self.pedidos['Total'] = total
+            except Exception as e:
+                self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[0].data()))
+                self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[1].data())
+                total = sum(self.pedidos['Precios'])
+                self.pedidos['Total'] = total
 
         elif len(self.tableview.selectedIndexes()) > 2:
             msg = qtw.QMessageBox()
@@ -334,22 +345,37 @@ class MainWindow(qtw.QMainWindow):
             msg.setText('Seleccione un modelo y el precio deseado')
             msg.setWindowTitle('Error')
             msg.exec_()
-        # print(self.pedidos)
-        # numero_pedido = self.lista.currentRow()
-        total = sum(self.pedidos['Precios'])
-        self.pedidos['Total'] = total
 
         self.total.setText(f"Total: {total}")
         self.llenar_lista()
 
     def terminar_pedido(self):
-        self.lista.clear()
-        self.total.setText('Total: 0')
-        self.nombre_cliente.clear()
-        self.numero_cliente.clear()
-        self.observaciones.setPlainText('')
-        self.cargar_venta()
-        self.detalle(self.pedidos)
+        if len(self.pedidos['Articulos']) == 0:
+            msg = qtw.QMessageBox()
+            # msg.setIcon(qtw.QMessageBox.Critical)
+            msg.setText('Seleccione al menos un artículo.')
+            msg.setWindowTitle('Pedido vacío')
+            print(len(self.nombre_cliente.text()))
+            msg.exec_()
+        elif len(self.nombre_cliente.text()) == 0 or len(self.numero_cliente.text()) == 0:
+            msg = qtw.QMessageBox()
+            # msg.setIcon(qtw.QMessageBox.Critical)
+            msg.setText('Los datos están incompletos.')
+            msg.setWindowTitle('Datos incompletos')
+            # msg.addButton('Continuar', clicked=msg.accept)
+            msg.exec_()
+        else:
+            self.pedidos['Fecha'] = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
+            self.pedidos['Cliente'] = self.nombre_cliente.text()
+            self.pedidos['Contacto'] = self.numero_cliente.text()
+            self.pedidos['Observaciones'] = self.observaciones.toPlainText()
+            self.lista.clear()
+            self.total.setText('Total: 0')
+            self.nombre_cliente.clear()
+            self.numero_cliente.clear()
+            self.observaciones.setPlainText('')
+            self.cargar_venta()
+            self.detalle(self.pedidos)
 
     def cargar_venta(self):
         ventas = pd.read_csv('Ventas_nuevo.csv')
@@ -370,14 +396,13 @@ class MainWindow(qtw.QMainWindow):
         """Instancia de clase de FileDialog con detalle de pedido"""
         dialog = PedidoFinalizado(dic)
         dialog.exec()
-        self.pedidos['Fecha'] = ''
-        self.pedidos['Cliente'] = ''
-        self.pedidos['Contacto'] = ''
-        self.pedidos['Articulos'] = []
-        self.pedidos['Precios'] = []
-        self.pedidos['Observaciones'] = ''
-        self.pedidos['Total'] = 0
-        # pass
+        for k in self.pedidos.keys():
+            if k == 'Total':
+                self.pedidos[k] = 0
+            elif k == 'Articulos' or k == 'Precios':
+                self.pedidos[k] = []
+            else:
+                self.pedidos[k] = ''
 
     @qtc.pyqtSlot()
     def filter(self):
