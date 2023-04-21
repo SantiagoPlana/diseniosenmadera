@@ -1,6 +1,7 @@
 import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
+from PyQt5.QtGui import QPixmap
 import csv
 import pandas as pd
 
@@ -19,6 +20,11 @@ class PedidoFinalizado(qtw.QDialog):
         self.layout().addWidget(
             qtw.QLabel('<h1>Presupuesto</h1>'),
         )
+        self.pixmap = QPixmap('diseñosenmadera1.png')
+        self.image = qtw.QLabel(self)
+        self.image.setPixmap(self.pixmap)
+        self.image.resize(5, 5)
+        self.layout().addWidget(self.image)
         self.key = self.dic.keys()
         self.values = list(self.dic.values())
         date = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
@@ -334,7 +340,14 @@ class MainWindow(qtw.QMainWindow):
 
     def cargar_venta(self):
         ventas = pd.read_csv('Ventas_nuevo.csv')
-        ventas.loc[len(ventas) + 1, self.pedidos.keys()] = self.pedidos.values()
+        # ventas.loc[len(ventas) + 1, self.pedidos.keys()] = self.pedidos.values()
+        row = len(ventas)
+        for k, v in self.pedidos.items():
+            print(row)
+            try:
+                ventas.at[row, k] = v
+            except Exception as e:
+                pass
         if 'Unnamed: 0' in ventas.columns:
             ventas.drop('Unnamed: 0', axis=1, inplace=True)
         ventas.fillna(value='Sin Detalle', axis=0, inplace=True)
