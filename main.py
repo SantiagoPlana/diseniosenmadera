@@ -4,6 +4,7 @@ from PyQt5 import QtCore as qtc
 import csv
 import pandas as pd
 
+
 class PedidoFinalizado(qtw.QDialog):
     """File dialog for finished sale."""
 
@@ -28,10 +29,10 @@ class PedidoFinalizado(qtw.QDialog):
         h_box.addWidget(qtw.QLabel(f"<h3>Cliente: {self.dic['Cliente']}</h3>"))
         h_box.addWidget(qtw.QLabel(f"<h3>Contacto: {self.dic['Contacto']}</h3>"))
         v_box.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"))
-        for i in range(len(self.dic['Artículos'])):
+        for i in range(len(self.dic['Articulos'])):
             # self.layout().setHorizontalSpacing(200)
             self.layout().addWidget(
-                qtw.QLabel(f'{self.dic["Artículos"][i]}'))
+                qtw.QLabel(f'{self.dic["Articulos"][i]}'))
             self.layout().addWidget(
                 qtw.QLabel(f'{self.dic["Precios"][i]}'))
         self.layout().addWidget(qtw.QLabel(' '))
@@ -118,7 +119,7 @@ class CsvTableModel(qtc.QAbstractTableModel):
             position + rows - 1
         )
         for i in range(rows):
-            del(self._data[position])
+            del (self._data[position])
         self.endRemoveRows()
 
     # method for saving
@@ -132,12 +133,11 @@ class CsvTableModel(qtc.QAbstractTableModel):
 
 
 class MainWindow(qtw.QMainWindow):
-
     model = None
     pedidos = {'Fecha': '',
                'Cliente': '',
                'Contacto': '',
-               'Artículos': [],
+               'Articulos': [],
                'Precios': [],
                'Total': 0,
                'Observaciones': ''}
@@ -155,21 +155,15 @@ class MainWindow(qtw.QMainWindow):
 
         # Menu
         menu = self.menuBar()
-        file_menu = menu.addMenu('Archivo')
-        open_action = file_menu.addAction('Cargar', self.select_file)
-        file_menu.addAction('Guardar', self.save_file)
+        file_menu = menu.addMenu('File')
+        file_menu.addAction('Open', self.select_file)
+        file_menu.addAction('Save', self.save_file)
 
         edit_menu = menu.addMenu('Edit')
         edit_menu.addAction('Insert Above', self.insert_above)
         edit_menu.addAction('Insert Below', self.insert_below)
         edit_menu.addAction('Remove Row(s)', self.remove_rows)
 
-        open_ventas = file_menu.addAction('Cargar Ventas', self.cargar_tabla_ventas)
-        toolbar = self.addToolBar('Toolbar')
-        toolbar.addAction(open_action)
-        toolbar.addAction(open_ventas)
-        toolbar.setFloatable(False)
-        toolbar.setAllowedAreas(qtc.Qt.TopToolBarArea)
         # Dock widgets
         dock = qtw.QDockWidget('Pedido')
         dock2 = qtw.QDockWidget('Filtros')
@@ -258,7 +252,7 @@ class MainWindow(qtw.QMainWindow):
     def select_file(self):
         filename, _ = qtw.QFileDialog.getOpenFileName(
             self,
-            'Elija un archivo CSV para abrir…',
+            'Select a CSV file to open…',
             qtc.QDir.currentPath(),
             'CSV Files (*.csv) ;; All Files (*)'
         )
@@ -268,14 +262,6 @@ class MainWindow(qtw.QMainWindow):
             self.tableview.setModel(self.filter_proxy_model)
             self.filtrar_por.clear()
             self.filtrar_por.addItems(self.model._headers)
-
-    def cargar_tabla_ventas(self):
-        filename = 'Ventas_nuevo.csv'
-        self.model = CsvTableModel(filename)
-        self.filter_proxy_model.setSourceModel(self.model)
-        self.tableview.setModel(self.filter_proxy_model)
-        self.filtrar_por.clear()
-        self.filtrar_por.addItems(self.model._headers)
 
     def save_file(self):
         if self.model:
@@ -303,9 +289,8 @@ class MainWindow(qtw.QMainWindow):
     def llenar_lista(self):
         # print('hey')
         self.lista.clear()
-        for i in range(len(self.pedidos['Artículos'])):
-
-            self.lista.addItem(f"{self.pedidos['Artículos'][i]} --- {self.pedidos['Precios'][i]}")
+        for i in range(len(self.pedidos['Articulos'])):
+            self.lista.addItem(f"{self.pedidos['Articulos'][i]} --- {self.pedidos['Precios'][i]}")
 
     def agregar_art(self):
         self.pedidos['Fecha'] = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
@@ -313,7 +298,7 @@ class MainWindow(qtw.QMainWindow):
         self.pedidos['Contacto'] = self.numero_cliente.text()
         self.pedidos['Observaciones'] = self.observaciones.toPlainText()
         if len(self.tableview.selectedIndexes()) == 2:
-            self.pedidos['Artículos'].append(self.tableview.selectedIndexes()[0].data())
+            self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[0].data())
             self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
 
         elif len(self.tableview.selectedIndexes()) > 2:
@@ -349,11 +334,11 @@ class MainWindow(qtw.QMainWindow):
 
     def cargar_venta(self):
         ventas = pd.read_csv('Ventas_nuevo.csv')
-
-        ventas.loc[len(ventas)+1, self.pedidos.keys()] = list(self.pedidos.values())
+        ventas.loc[len(ventas) + 1, self.pedidos.keys()] = self.pedidos.values()
+        if 'Unnamed: 0' in ventas.columns:
+            ventas.drop('Unnamed: 0', axis=1, inplace=True)
         ventas.fillna(value='Sin Detalle', axis=0, inplace=True)
         ventas.to_csv('Ventas_nuevo.csv', index=False)
-
 
     def detalle(self, dic):
         """Instancia de clase de FileDialog con detalle de pedido"""
@@ -362,7 +347,7 @@ class MainWindow(qtw.QMainWindow):
         self.pedidos['Fecha'] = ''
         self.pedidos['Cliente'] = ''
         self.pedidos['Contacto'] = ''
-        self.pedidos['Artículos'] = []
+        self.pedidos['Articulos'] = []
         self.pedidos['Precios'] = []
         self.pedidos['Observaciones'] = ''
         self.pedidos['Total'] = 0
