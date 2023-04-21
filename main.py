@@ -161,14 +161,19 @@ class MainWindow(qtw.QMainWindow):
 
         # Menu
         menu = self.menuBar()
-        file_menu = menu.addMenu('File')
-        file_menu.addAction('Open', self.select_file)
-        file_menu.addAction('Save', self.save_file)
+        file_menu = menu.addMenu('Archivo')
+        file_menu.addAction('Abrir', self.select_file)
+        file_menu.addAction('Guardar', self.save_file)
 
-        edit_menu = menu.addMenu('Edit')
-        edit_menu.addAction('Insert Above', self.insert_above)
-        edit_menu.addAction('Insert Below', self.insert_below)
-        edit_menu.addAction('Remove Row(s)', self.remove_rows)
+        edit_menu = menu.addMenu('Editar')
+        edit_menu.addAction('Insertar Arriba', self.insert_above)
+        edit_menu.addAction('Insertar abajo', self.insert_below)
+        edit_menu.addAction('Eliminar fila(s)', self.remove_rows)
+
+        toolbar = self.addToolBar('Barra de tareas')
+        open_ventas = toolbar.addAction('Cargar Ventas', self.cargar_tabla_ventas)
+        toolbar.setFloatable(False)
+        toolbar.setAllowedAreas(qtc.Qt.TopToolBarArea)
 
         # Dock widgets
         dock = qtw.QDockWidget('Pedido')
@@ -268,6 +273,14 @@ class MainWindow(qtw.QMainWindow):
             self.tableview.setModel(self.filter_proxy_model)
             self.filtrar_por.clear()
             self.filtrar_por.addItems(self.model._headers)
+
+    def cargar_tabla_ventas(self):
+        filename = 'Ventas_nuevo.csv'
+        self.model = CsvTableModel(filename)
+        self.filter_proxy_model.setSourceModel(self.model)
+        self.tableview.setModel(self.filter_proxy_model)
+        self.filtrar_por.clear()
+        self.filtrar_por.addItems(self.model._headers)
 
     def save_file(self):
         if self.model:
