@@ -2,15 +2,15 @@ import inspect
 import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
-from PyQt5.QtGui import QPixmap, QIcon, QPainter
-from PyQt5.QtPrintSupport import QPrintDialog, QPrinter, QPrintPreviewDialog
+from PyQt5.QtGui import QPixmap, QPainter
+from PyQt5.QtPrintSupport import  QPrinter
 from PyQt5.Qt import QFileInfo
 import csv
 import pandas as pd
 
 
 class PedidoFinalizado(qtw.QDialog):
-    """File dialog for finished sale."""
+    """File dialog para presupuesto de venta."""
 
     def __init__(self, dic=dict):
         super().__init__(modal=True)
@@ -73,6 +73,8 @@ class PedidoFinalizado(qtw.QDialog):
         self.grid.addWidget(self.print_btn, count + 3, 1)
 
     def guardar_pedido(self):
+        """Exportar a PDF"""
+
         filename, _ = qtw.QFileDialog.getSaveFileName(self,
                                                       'Exportar PDF',
                                                       None,
@@ -218,6 +220,7 @@ class MainWindow(qtw.QMainWindow):
         # Main UI
         self.setWindowTitle('Diseños en Madera')
         self.resize(1380, 600)
+        self.center()
         self.tableview = qtw.QTableView()
         self.tableview.setSortingEnabled(True)
         self.tableview.setAlternatingRowColors(True)
@@ -315,6 +318,13 @@ class MainWindow(qtw.QMainWindow):
 
         # End main UI code
         self.show()
+
+    # Display method
+    def center(self):
+        geometry = self.frameGeometry()
+        dsktp_geo = qtw.QDesktopWidget().availableGeometry().center()
+        geometry.moveCenter(dsktp_geo)
+        self.move(geometry.topLeft())
 
     # File methods
     def select_file(self):
