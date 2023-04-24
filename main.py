@@ -1,7 +1,10 @@
+import inspect
 import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QIcon, QPainter
+from PyQt5.QtPrintSupport import QPrintDialog, QPrinter, QPrintPreviewDialog
+from PyQt5.Qt import QFileInfo
 import csv
 import pandas as pd
 
@@ -12,12 +15,13 @@ class PedidoFinalizado(qtw.QDialog):
     def __init__(self, dic=dict):
         super().__init__(modal=True)
         self.setMinimumSize(400, 400)
-        grid = qtw.QGridLayout()
-        grid.setRowStretch(1, 4)
+        self.grid = qtw.QGridLayout()
+        self.grid.setRowStretch(1, 4)
         self.dic = dic
-        self.setLayout(grid)
+        self.setLayout(self.grid)
         self.setWindowTitle('Presupuesto')
         self.pixmap = QPixmap('diseñosenmadera2.png')
+
         self.image = qtw.QLabel(self)
         self.image.setPixmap(self.pixmap)
         #self.image.setFixedSize(550, 155)
@@ -30,17 +34,18 @@ class PedidoFinalizado(qtw.QDialog):
 
         self.accept_btn = qtw.QPushButton('Emitir')
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
+        self.print_btn = qtw.QPushButton('Exportar a PDF', clicked=self.guardar_pedido)
 
         # Layout
-        grid.addWidget(
+        self.grid.addWidget(
             qtw.QLabel('<h1>Presupuesto</h1>'), 1, 0
         )
-        grid.addWidget(self.image, 1, 2, 1, 3)
-        grid.addWidget(qtw.QLabel(
+        self.grid.addWidget(self.image, 1, 2, 1, 3)
+        self.grid.addWidget(qtw.QLabel(
             f'<b>Fecha: {date}</b>'), 3, 0)
-        grid.addWidget(qtw.QLabel(f"<b>Cliente: {self.dic['Cliente']}</b>"), 3, 1)
-        grid.addWidget(qtw.QLabel(f"<b>Contacto: {self.dic['Contacto']}</b>"), 3, 2)
-        grid.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"), 5, 0)
+        self.grid.addWidget(qtw.QLabel(f"<b>Cliente: {self.dic['Cliente']}</b>"), 3, 1)
+        self.grid.addWidget(qtw.QLabel(f"<b>Contacto: {self.dic['Contacto']}</b>"), 3, 2)
+        self.grid.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"), 5, 0)
         count = 6
         new_dic = {}
         for i in self.dic['Articulos']:
@@ -54,26 +59,45 @@ class PedidoFinalizado(qtw.QDialog):
             else:
                 new_dic[i][1] += self.dic['Precios'][idx]
         for k, v in new_dic.items():
-            grid.addWidget(
+            self.grid.addWidget(
                 qtw.QLabel(f'<b>{k}  x{v[0]}</b>'), count, 0)
-            grid.addWidget(
+            self.grid.addWidget(
                 qtw.QLabel(f'{v[1]}'), count, 2)
             count += 1
 
-        grid.addWidget(qtw.QLabel(' '), count, 0, 1, 4)
-        grid.addWidget(self.envio, count + 1, 0)
-        grid.addWidget(qtw.QLabel(f"<b>{self.dic['Total']}</b>"), count+1, 2)
-        grid.addWidget(qtw.QLabel(' '), count + 2, 0)
-        grid.addWidget(self.accept_btn, count + 3, 0)
-        grid.addWidget(self.cancel_btn, count + 3, 1)
+        self.grid.addWidget(qtw.QLabel(' '), count, 0, 1, 4)
+        self.grid.addWidget(self.envio, count + 1, 0)
+        self.grid.addWidget(qtw.QLabel(f"<b>{self.dic['Total']}</b>"), count+1, 2)
+        self.grid.addWidget(qtw.QLabel(' '), count + 2, 0)
+        self.grid.addWidget(self.accept_btn, count + 3, 0)
+        self.grid.addWidget(self.cancel_btn, count + 3, 2)
+        self.grid.addWidget(self.print_btn, count + 3, 1)
 
-    def agregate_items(self):
-        item_dic = {}
-        for i in self.dic['Articulos']:
-            if not i in item_dic:
-                item_dic[i] = 1
-            else:
-                item_dic[i] += 1
+    def guardar_pedido(self):
+        filename, _ = qtw.QFileDialog.getSaveFileName(self,
+                                                      'Exportar PDF',
+                                                      None,
+                                                      'PDF files (.pdf);;All Files (*)')
+        if filename != '':
+            if QFileInfo(filename).suffix() == '':
+                filename += '.pdf'
+                printer = QPrinter(QPrinter.HighResolution)
+                printer.setOutputFormat(QPrinter.PdfFormat)
+                printer.setOutputFileName(filename)
+                # printer = QPrinter()
+                # printer.setOutputFormat(QPrinter.PdfFormat)
+                # printer.setOutputFileName("Test.pdf")
+
+                painter = QPainter(printer)
+                xscale = printer.pageRect().width() / self.width()
+                yscale = printer.pageRect().height() / self.height()
+                scale = min(xscale, yscale)
+                painter.translate(printer.paperRect().center())
+                painter.scale(scale, scale)
+                painter.translate((self.width() / 2) * -1, (self.height() / 2) * -1)
+
+                self.render(painter)
+                painter.end()
 
 
 
@@ -234,20 +258,24 @@ class MainWindow(qtw.QMainWindow):
         dock.setWidget(filter_widget)
         dock2.setWidget(second_widget)
 
+        # Widgets
         self.articulo = qtw.QLineEdit()
         # self.articulo.setStyleSheet('font-size: 15px;')
-        self.articulo.setFixedWidth(150)
-        # self.material = qtw.QComboBox()
-        # self.modelo = qtw.QComboBox()
+        # self.articulo.setFixedWidth(150)
         self.filtrar_por = qtw.QComboBox()
         self.lista = qtw.QListWidget()
         self.observaciones = qtw.QTextEdit(placeholderText='Observaciones')
         self.nombre_cliente = qtw.QLineEdit(placeholderText='Nombre del cliente')
         self.numero_cliente = qtw.QLineEdit(placeholderText='Número de teléfono')
         self.total = qtw.QLabel('Total: 0')
-        # Agregar categorías
+
+        # Status bar
+        self.statusBar().showMessage('...')
+
         self.lista.setAlternatingRowColors(True)
+        # Agregar categorías
         # self.lista.setFont()
+
         # Botones
         self.btn_agregar = qtw.QPushButton('Agregar Item')
         self.btn_agregar.setFixedWidth(100)
@@ -255,6 +283,7 @@ class MainWindow(qtw.QMainWindow):
         self.btn_eliminar = qtw.QPushButton('Eliminar')
         # self.btn_cargar = qtw.QPushButton('Cargar Tabla')
 
+        # Layout
         filter_widget.layout().addWidget(self.nombre_cliente, 1, 0)
         filter_widget.layout().addWidget(self.numero_cliente, 2, 0)
         filter_widget.layout().addWidget(self.lista, 3, 0, 1, 4)
@@ -272,12 +301,14 @@ class MainWindow(qtw.QMainWindow):
         second_widget.layout().addWidget(self.filtrar_por, 2, 1)
         # second_widget.layout().addWidget(qtw.QLabel('Modelo'), 1, 3)
 
+        # Proxy model
         self.filter_proxy_model = qtc.QSortFilterProxyModel()
 
         self.filter_proxy_model.setFilterCaseSensitivity(qtc.Qt.CaseInsensitive)
         self.filter_proxy_model.setFilterKeyColumn(0)
         self.articulo.textChanged.connect(self.filter_proxy_model.setFilterRegExp)
 
+        # Signals
         self.btn_agregar.clicked.connect(self.agregar_art)
         self.btn_eliminar.clicked.connect(self.eliminar_item)
         self.btn_pedido.clicked.connect(self.terminar_pedido)
@@ -314,6 +345,7 @@ class MainWindow(qtw.QMainWindow):
     def save_file(self):
         if self.model:
             self.model.save_data()
+            self.statusBar().showMessage('Archivo guardado correctamente', 1000)
 
     # Methods for insert/remove
 
@@ -377,6 +409,8 @@ class MainWindow(qtw.QMainWindow):
 
         self.total.setText(f"Total: {total}")
         self.llenar_lista()
+
+
 
     def terminar_pedido(self):
         if len(self.pedidos['Articulos']) == 0:
@@ -443,6 +477,13 @@ class MainWindow(qtw.QMainWindow):
         self.total.setText(f"Total: {total1}")
         self.llenar_lista()
 
+    def check_changes(self, functionCall):
+        try:
+            for name, obj in inspect.getmembers(self):
+                if isinstance(obj, qtw.QTableView):
+                    pass
+        except Exception as e:
+            print(e)
 
 
 
