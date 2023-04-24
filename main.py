@@ -32,7 +32,7 @@ class PedidoFinalizado(qtw.QDialog):
         date = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
         # time = qtc.QTime().currentTime().toString('hh:mm')
 
-        self.accept_btn = qtw.QPushButton('Emitir')
+        self.accept_btn = qtw.QPushButton('Emitir', clicked=self.accept)
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
         self.print_btn = qtw.QPushButton('Exportar a PDF', clicked=self.guardar_pedido)
 
@@ -66,7 +66,7 @@ class PedidoFinalizado(qtw.QDialog):
             count += 1
 
         self.grid.addWidget(qtw.QLabel(' '), count, 0, 1, 4)
-        self.grid.addWidget(self.envio, count + 1, 0)
+        # self.grid.addWidget(self.envio, count + 1, 0)
         self.grid.addWidget(qtw.QLabel(f"<b>{self.dic['Total']}</b>"), count+1, 2)
         self.grid.addWidget(qtw.QLabel(' '), count + 2, 0)
         self.grid.addWidget(self.accept_btn, count + 3, 0)
@@ -98,7 +98,6 @@ class PedidoFinalizado(qtw.QDialog):
 
                 self.render(painter)
                 painter.end()
-
 
 
 class CsvTableModel(qtc.QAbstractTableModel):
@@ -260,6 +259,7 @@ class MainWindow(qtw.QMainWindow):
 
         # Widgets
         self.articulo = qtw.QLineEdit()
+        self.envio = qtw.QLineEdit(placeholderText='Costo de envío')
         # self.articulo.setStyleSheet('font-size: 15px;')
         # self.articulo.setFixedWidth(150)
         self.filtrar_por = qtw.QComboBox()
@@ -287,19 +287,17 @@ class MainWindow(qtw.QMainWindow):
         filter_widget.layout().addWidget(self.nombre_cliente, 1, 0)
         filter_widget.layout().addWidget(self.numero_cliente, 2, 0)
         filter_widget.layout().addWidget(self.lista, 3, 0, 1, 4)
-        filter_widget.layout().addWidget(self.total, 4, 0)
+        filter_widget.layout().addWidget(self.envio, 4, 0)
+        filter_widget.layout().addWidget(self.total, 4, 1)
         filter_widget.layout().addWidget(self.btn_agregar, 5, 0)
         filter_widget.layout().addWidget(self.btn_eliminar, 5, 1)
 
         filter_widget.layout().addWidget(self.observaciones, 6, 0, 1, 4)
         filter_widget.layout().addWidget(self.btn_pedido, 7, 0)
-        # second_widget.layout().addWidget(qtw.QLabel('Material'), 1, 1)
-        # second_widget.layout().addWidget(self.material, 2, 1)
         second_widget.layout().addWidget(qtw.QLabel('Filtro'), 1, 0)
         second_widget.layout().addWidget(self.articulo, 2, 0)
         second_widget.layout().addWidget(qtw.QLabel('Filtrar por'), 1, 1)
         second_widget.layout().addWidget(self.filtrar_por, 2, 1)
-        # second_widget.layout().addWidget(qtw.QLabel('Modelo'), 1, 3)
 
         # Proxy model
         self.filter_proxy_model = qtc.QSortFilterProxyModel()
@@ -341,6 +339,7 @@ class MainWindow(qtw.QMainWindow):
         self.tableview.setModel(self.filter_proxy_model)
         self.filtrar_por.clear()
         self.filtrar_por.addItems(self.model._headers)
+        self.statusBar().showMessage('Tabla de ventas')
 
     def save_file(self):
         if self.model:
@@ -410,8 +409,6 @@ class MainWindow(qtw.QMainWindow):
         self.total.setText(f"Total: {total}")
         self.llenar_lista()
 
-
-
     def terminar_pedido(self):
         if len(self.pedidos['Articulos']) == 0:
             msg = qtw.QMessageBox()
@@ -432,10 +429,16 @@ class MainWindow(qtw.QMainWindow):
             self.pedidos['Cliente'] = self.nombre_cliente.text()
             self.pedidos['Contacto'] = self.numero_cliente.text()
             self.pedidos['Observaciones'] = self.observaciones.toPlainText()
+            if self.envio.text():
+                print('Hay texto')
+                self.pedidos['Articulos'].append('Envío')
+                self.pedidos['Precios'].append(float(self.envio.text()))
+                self.pedidos['Total'] += float(self.envio.text())
             self.lista.clear()
             self.total.setText('Total: 0')
             self.nombre_cliente.clear()
             self.numero_cliente.clear()
+            self.envio.clear()
             self.observaciones.setPlainText('')
             self.cargar_venta()
             self.detalle(self.pedidos)
@@ -445,7 +448,6 @@ class MainWindow(qtw.QMainWindow):
         # ventas.loc[len(ventas) + 1, self.pedidos.keys()] = self.pedidos.values()
         row = len(ventas)
         for k, v in self.pedidos.items():
-            print(row)
             try:
                 ventas.at[row, k] = v
             except Exception as e:
@@ -454,6 +456,8 @@ class MainWindow(qtw.QMainWindow):
             ventas.drop('Unnamed: 0', axis=1, inplace=True)
         ventas.fillna(value='Sin Detalle', axis=0, inplace=True)
         ventas.to_csv('Ventas_nuevo.csv', index=False)
+
+        self.statusBar().showMessage('Venta cargada correctamente', 2000)
 
     def detalle(self, dic):
         """Instancia de clase de FileDialog con detalle de pedido"""
@@ -484,7 +488,6 @@ class MainWindow(qtw.QMainWindow):
                     pass
         except Exception as e:
             print(e)
-
 
 
     @qtc.pyqtSlot()
