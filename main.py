@@ -16,7 +16,8 @@ class PedidoFinalizado(qtw.QDialog):
         super().__init__(modal=True)
         self.setMinimumSize(400, 400)
         self.grid = qtw.QGridLayout()
-        self.grid.setRowStretch(1, 4)
+        # self.grid.setRowStretch(1, 4)
+        self.grid.setSpacing(18)
         self.dic = dic
         self.setLayout(self.grid)
         self.setWindowTitle('Presupuesto')
@@ -24,13 +25,9 @@ class PedidoFinalizado(qtw.QDialog):
 
         self.image = qtw.QLabel(self)
         self.image.setPixmap(self.pixmap)
-        #self.image.setFixedSize(550, 155)
-        self.envio = qtw.QLineEdit(placeholderText='Costo de envío')
-        self.envio.setMaximumSize(60, 20)
         self.key = self.dic.keys()
         self.values = list(self.dic.values())
         date = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
-        # time = qtc.QTime().currentTime().toString('hh:mm')
 
         self.accept_btn = qtw.QPushButton('Emitir', clicked=self.accept)
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
@@ -43,10 +40,12 @@ class PedidoFinalizado(qtw.QDialog):
         self.grid.addWidget(self.image, 1, 2, 1, 3)
         self.grid.addWidget(qtw.QLabel(
             f'<b>Fecha: {date}</b>'), 3, 0)
-        self.grid.addWidget(qtw.QLabel(f"<b>Cliente: {self.dic['Cliente']}</b>"), 3, 1)
-        self.grid.addWidget(qtw.QLabel(f"<b>Contacto: {self.dic['Contacto']}</b>"), 3, 2)
-        self.grid.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"), 5, 0)
-        count = 6
+        self.grid.addWidget(qtw.QLabel(f"Cliente: <b>{self.dic['Cliente']}</b>"), 3, 1)
+        self.grid.addWidget(qtw.QLabel(f"Contacto: <b>{self.dic['Contacto']}</b>"), 3, 2)
+        if len(self.dic['Observaciones']) > 1:
+            self.grid.addWidget(qtw.QLabel(f"Observaciones: \n{self.dic['Observaciones']}"), 4, 0)
+        self.grid.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"), 6, 0)
+        count = 8
         new_dic = {}
         for i in self.dic['Articulos']:
             if i not in new_dic:
