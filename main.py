@@ -13,18 +13,20 @@ class PedidoFinalizado(qtw.QDialog):
         super().__init__(modal=True)
         self.setMinimumSize(400, 400)
         grid = qtw.QGridLayout()
-        h_box = qtw.QHBoxLayout()
+        grid.setRowStretch(1, 4)
         self.dic = dic
         self.setLayout(grid)
         self.setWindowTitle('Presupuesto')
-        self.pixmap = QPixmap('diseñosenmadera1.png')
+        self.pixmap = QPixmap('diseñosenmadera2.png')
         self.image = qtw.QLabel(self)
         self.image.setPixmap(self.pixmap)
-        self.image.setFixedSize(550, 140)
+        #self.image.setFixedSize(550, 155)
+        self.envio = qtw.QLineEdit(placeholderText='Costo de envío')
+        self.envio.setMaximumSize(60, 20)
         self.key = self.dic.keys()
         self.values = list(self.dic.values())
         date = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
-        time = qtc.QTime().currentTime().toString('hh:mm')
+        # time = qtc.QTime().currentTime().toString('hh:mm')
 
         self.accept_btn = qtw.QPushButton('Emitir')
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
@@ -33,25 +35,37 @@ class PedidoFinalizado(qtw.QDialog):
         grid.addWidget(
             qtw.QLabel('<h1>Presupuesto</h1>'), 1, 0
         )
-        grid.addWidget(self.image, 2, 0, 1, 3)
+        grid.addWidget(self.image, 1, 2, 1, 3)
         grid.addWidget(qtw.QLabel(
-            f'<h3>Fecha: {date}</h3>'), 3, 0)
-        grid.addWidget(qtw.QLabel(f"<h3>Cliente: {self.dic['Cliente']}</h3>"), 3, 1)
-        grid.addWidget(qtw.QLabel(f"<h3>Contacto: {self.dic['Contacto']}</h3>"), 3, 2)
+            f'<b>Fecha: {date}</b>'), 3, 0)
+        grid.addWidget(qtw.QLabel(f"<b>Cliente: {self.dic['Cliente']}</b>"), 3, 1)
+        grid.addWidget(qtw.QLabel(f"<b>Contacto: {self.dic['Contacto']}</b>"), 3, 2)
         grid.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"), 5, 0)
         count = 6
-        for i in range(len(self.dic['Articulos'])):
-            # self.layout().setHorizontalSpacing(200)
+        new_dic = {}
+        for i in self.dic['Articulos']:
+            if i not in new_dic:
+                new_dic[i] = [1]
+            else:
+                new_dic[i][0] += 1
+            idx = self.dic['Articulos'].index(i)
+            if len(new_dic[i]) == 1:
+                new_dic[i].append(self.dic['Precios'][idx])
+            else:
+                new_dic[i][1] += self.dic['Precios'][idx]
+        for k, v in new_dic.items():
             grid.addWidget(
-                qtw.QLabel(f'{self.dic["Articulos"][i]}'), count, 0)
+                qtw.QLabel(f'<b>{k}  x{v[0]}</b>'), count, 0)
             grid.addWidget(
-                qtw.QLabel(f'{self.dic["Precios"][i]}'), count, 2)
+                qtw.QLabel(f'{v[1]}'), count, 2)
             count += 1
+
         grid.addWidget(qtw.QLabel(' '), count, 0, 1, 4)
-        grid.addWidget(qtw.QLabel(f"<b>Total:  {self.dic['Total']}</b>"), count+1, 2)
+        grid.addWidget(self.envio, count + 1, 0)
+        grid.addWidget(qtw.QLabel(f"<b>{self.dic['Total']}</b>"), count+1, 2)
         grid.addWidget(qtw.QLabel(' '), count + 2, 0)
         grid.addWidget(self.accept_btn, count + 3, 0)
-        grid.addWidget(self.cancel_btn, count + 3, 0)
+        grid.addWidget(self.cancel_btn, count + 3, 1)
 
     def agregate_items(self):
         item_dic = {}
@@ -424,6 +438,9 @@ class MainWindow(qtw.QMainWindow):
         data = self.lista.currentIndex().data()
         del(self.pedidos['Articulos'][row])
         del(self.pedidos['Precios'][row])
+        total1 = sum(self.pedidos['Precios'])
+        self.pedidos['Total'] = total1
+        self.total.setText(f"Total: {total1}")
         self.llenar_lista()
 
 
