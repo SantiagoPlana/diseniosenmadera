@@ -529,15 +529,21 @@ class MainWindow(qtw.QMainWindow):
         idxs = self.tableview.selectedIndexes()
         # self.tableview.indexAt()
         if idxs:
-            for idx in idxs:
-                row = idx.row()
-                col = idx.column()
-                print(row, col)
-                idx = float(idx.data())
-                nuevo_precio = idx + (idx * porcentaje)
-                print(nuevo_precio)
-                self.model._data[row][col] = nuevo_precio
-            self.statusBar().showMessage('Valores modificados correctamente.', 2000)
+            msg = qtw.QMessageBox()
+            msg.setText(f'¿Está seguro de que desea modificar {len(idxs)} elementos?')
+            msg.setWindowTitle(' ')
+            msg.exec_()
+            if msg.sender():
+                print('Accepted')
+                for idx in idxs:
+                    row = idx.row()
+                    col = idx.column()
+                    idx = float(idx.data())
+                    porcentaje = porcentaje / 100
+                    nuevo_precio = idx + (idx * porcentaje)
+                    # print(nuevo_precio)
+                    self.model._data[row][col] = nuevo_precio
+                self.statusBar().showMessage('Valores modificados correctamente.', 10000)
 
     @qtc.pyqtSlot()
     def filter(self):
