@@ -198,6 +198,7 @@ class MainWindow(qtw.QMainWindow):
                'Precios': [],
                'Total': 0,
                'Observaciones': ''}
+    float_signal = qtc.pyqtSignal(float)
 
     def __init__(self):
         """MainWindow constructor."""
@@ -319,6 +320,7 @@ class MainWindow(qtw.QMainWindow):
         self.filtrar_por.currentTextChanged.connect(
             self.filter)
 
+        # self.float_signal.connect(self.calcular_porcentaje)
         # End main UI code
         self.show()
 
@@ -511,6 +513,19 @@ class MainWindow(qtw.QMainWindow):
             self.llenar_lista()
 
     def porcentaje(self):
+        user_input = qtw.QInputDialog()
+        porcentaje, ok = user_input.getInt(self,
+                                           'Porcentaje',
+                                           'Porcentaje: ',
+                                           qtw.QLineEdit.Normal,
+                                           0, 100)
+        # user_input.setDoubleDecimals(10)
+
+        if porcentaje and ok:
+            print(porcentaje)
+            self.calcular_porcentaje(porcentaje)
+
+    def calcular_porcentaje(self, porcentaje):
         idxs = self.tableview.selectedIndexes()
         # self.tableview.indexAt()
         if idxs:
@@ -519,7 +534,7 @@ class MainWindow(qtw.QMainWindow):
                 col = idx.column()
                 print(row, col)
                 idx = float(idx.data())
-                nuevo_precio = idx + (idx * 0.20)
+                nuevo_precio = idx + (idx * porcentaje)
                 print(nuevo_precio)
                 self.model._data[row][col] = nuevo_precio
             self.statusBar().showMessage('Valores modificados correctamente.', 2000)
