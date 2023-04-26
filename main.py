@@ -514,11 +514,11 @@ class MainWindow(qtw.QMainWindow):
 
     def porcentaje(self):
         user_input = qtw.QInputDialog()
-        porcentaje, ok = user_input.getInt(self,
-                                           'Porcentaje',
-                                           'Porcentaje: ',
-                                           qtw.QLineEdit.Normal,
-                                           0, 100)
+        porcentaje, ok = user_input.getDouble(self,
+                                              'Porcentaje',
+                                              'Porcentaje: ',
+                                              qtw.QLineEdit.Normal,
+                                              0, 100)
         # user_input.setDoubleDecimals(10)
 
         if porcentaje and ok:
@@ -527,7 +527,6 @@ class MainWindow(qtw.QMainWindow):
 
     def calcular_porcentaje(self, porcentaje):
         idxs = self.tableview.selectedIndexes()
-        # self.tableview.indexAt()
         if idxs:
             msg = qtw.QMessageBox()
             msg.setText(f'¿Está seguro de que desea modificar {len(idxs)} elementos?')
