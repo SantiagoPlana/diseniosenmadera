@@ -239,6 +239,7 @@ class MainWindow(qtw.QMainWindow):
 
         toolbar = self.addToolBar('Barra de tareas')
         open_ventas = toolbar.addAction('Cargar Ventas', self.cargar_tabla_ventas)
+        toolbar.addAction('Aplicar', self.porcentaje)
         toolbar.setFloatable(False)
         toolbar.setAllowedAreas(qtc.Qt.TopToolBarArea)
 
@@ -283,6 +284,7 @@ class MainWindow(qtw.QMainWindow):
         self.btn_agregar.setFixedWidth(100)
         self.btn_pedido = qtw.QPushButton('Finalizar Pedido')
         self.btn_eliminar = qtw.QPushButton('Eliminar')
+        self.btn_porcentaje = qtw.QPushButton('Aplicar')
         # self.btn_cargar = qtw.QPushButton('Cargar Tabla')
 
         # Layout
@@ -296,6 +298,7 @@ class MainWindow(qtw.QMainWindow):
 
         filter_widget.layout().addWidget(self.observaciones, 6, 0, 1, 4)
         filter_widget.layout().addWidget(self.btn_pedido, 7, 0)
+
         second_widget.layout().addWidget(qtw.QLabel('Filtro'), 1, 0)
         second_widget.layout().addWidget(self.articulo, 2, 0)
         second_widget.layout().addWidget(qtw.QLabel('Filtrar por'), 1, 1)
@@ -340,6 +343,8 @@ class MainWindow(qtw.QMainWindow):
             self.tableview.setModel(self.filter_proxy_model)
             self.filtrar_por.clear()
             self.filtrar_por.addItems(self.model._headers)
+            # self.tableview.resizeRowsToContents()
+            self.tableview.resizeColumnsToContents()
 
     def cargar_tabla_ventas(self):
         filename = 'Ventas_nuevo.csv'
@@ -349,6 +354,8 @@ class MainWindow(qtw.QMainWindow):
         self.filtrar_por.clear()
         self.filtrar_por.addItems(self.model._headers)
         self.statusBar().showMessage('Tabla de ventas')
+
+        self.tableview.resizeRowsToContents()
 
     def save_file(self):
         if self.model:
@@ -502,6 +509,20 @@ class MainWindow(qtw.QMainWindow):
             self.pedidos['Total'] = total1
             self.total.setText(f"Total: {total1}")
             self.llenar_lista()
+
+    def porcentaje(self):
+        idxs = self.tableview.selectedIndexes()
+        # self.tableview.indexAt()
+        if idxs:
+            for idx in idxs:
+                row = idx.row()
+                col = idx.column()
+                print(row, col)
+                idx = float(idx.data())
+                nuevo_precio = idx + (idx * 0.20)
+                print(nuevo_precio)
+                self.model._data[row][col] = nuevo_precio
+            self.statusBar().showMessage('Valores modificados correctamente.', 2000)
 
     @qtc.pyqtSlot()
     def filter(self):
