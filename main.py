@@ -9,6 +9,63 @@ import csv
 import pandas as pd
 
 
+class CargarStock(qtw.QDialog):
+    """Dialog para carga de stock"""
+
+    def __init__(self):
+        super().__init__()
+        self.setSizeGripEnabled(True)
+        self.grid = qtw.QGridLayout()
+        self.grid.setSpacing(18)
+        self.setLayout(self.grid)
+        self.setWindowTitle('Carga de stock')
+
+        self.material = qtw.QComboBox()
+        self.tipo = qtw.QLineEdit()
+        self.modelo = qtw.QLineEdit()
+        self.cantidad = qtw.QSpinBox()
+
+        self.btn_cargar = qtw.QPushButton('Cargar artículos', clicked=self.cargar)
+        self.btn_cancelar = qtw.QPushButton('Cancelar', clicked=self.close)
+
+        self.grid.addWidget(qtw.QLabel("Material"), 1, 0)
+        self.grid.addWidget(self.material, 2, 0)
+        self.grid.addWidget(qtw.QLabel("Tipo de artículo"), 3, 0)
+        self.grid.addWidget(self.tipo, 4, 0)
+        self.grid.addWidget(qtw.QLabel('Modelo'), 5, 0)
+        self.grid.addWidget(self.modelo, 6, 0)
+        self.grid.addWidget(qtw.QLabel('Cantidad'), 1, 1)
+        self.grid.addWidget(self.cantidad, 2, 1)
+        self.grid.addWidget(self.btn_cargar, 7, 0)
+        self.grid.addWidget(self.btn_cancelar, 7, 1)
+
+        self.material.addItems(['Pino', 'Algarrobo'])
+
+    def cargar(self):
+        material = self.material.currentText()
+        tipo = self.tipo.text()
+        modelo = self.modelo.text()
+        cantidad = self.cantidad.value()
+        print(material, tipo, modelo, cantidad)
+        if len(tipo) == 0 or len(modelo) == 0 or cantidad == 0:
+            message = "Todos los campos deben estar completos"
+            msg = qtw.QMessageBox()
+            msg.setText(message)
+            msg.setWindowTitle('Datos insuficientes')
+            msg.exec_()
+        else:
+            filename, _ = ['', []]
+            if filename:
+                stock = pd.read_csv(filename)
+                subset = stock[(stock['Material'] == material) & (stock['Tipo de articulo'] == tipo)]
+                if subset.empty:
+                    """Chequear typos, o asimetría de formateo.
+                    Si sigue sin existir, cargar item nuevo"""
+                else:
+                    index = subset.index[0]
+                    stock.loc[index, 'Cantidad'] += cantidad
+
+
 class PedidoFinalizado(qtw.QDialog):
     """File dialog para presupuesto de venta."""
 
@@ -239,8 +296,9 @@ class MainWindow(qtw.QMainWindow):
         edit_menu.addAction('Eliminar fila(s)', self.remove_rows)
 
         toolbar = self.addToolBar('Barra de tareas')
-        open_ventas = toolbar.addAction('Cargar Ventas', self.cargar_tabla_ventas)
-        toolbar.addAction('Aplicar', self.porcentaje)
+        toolbar.addAction('Cargar Ventas', self.cargar_tabla_ventas)
+        toolbar.addAction('Aplicar porcentaje', self.porcentaje)
+        toolbar.addAction('Cargar stock', self.cargar_stock)
         toolbar.setFloatable(False)
         toolbar.setAllowedAreas(qtc.Qt.TopToolBarArea)
 
@@ -543,6 +601,13 @@ class MainWindow(qtw.QMainWindow):
                     # print(nuevo_precio)
                     self.model._data[row][col] = nuevo_precio
                 self.statusBar().showMessage('Valores modificados correctamente.', 10000)
+
+    def cargar_stock(self):
+        try:
+            stock_window = CargarStock()
+            stock_window.exec()
+        except Exception as e:
+            print(e)
 
     @qtc.pyqtSlot()
     def filter(self):
