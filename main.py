@@ -380,6 +380,14 @@ class MainWindow(qtw.QMainWindow):
             self.model.removeRows(selected[0].row(), num_rows, None)
 
     # Form methods
+    def limpiar_campos(self):
+        self.lista.clear()
+        self.total.setText('Total: 0')
+        self.nombre_cliente.clear()
+        self.numero_cliente.clear()
+        self.envio.clear()
+        self.observaciones.setPlainText('')
+
     def llenar_lista(self):
         self.lista.clear()
         if len(self.pedidos['Articulos']) > 0:
@@ -394,11 +402,23 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[0].data())
                 total = sum(self.pedidos['Precios'])
                 self.pedidos['Total'] = total
+                self.total.setText(f"Total: {total}")
+                self.llenar_lista()
             except Exception as e:
-                self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[0].data()))
-                self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[1].data())
-                total = sum(self.pedidos['Precios'])
-                self.pedidos['Total'] = total
+                if 'string' in str(e):
+                    msg = qtw.QMessageBox()
+                    msg.setIcon(qtw.QMessageBox.Critical)
+                    # msg.setText('Error')
+                    msg.setText('Seleccione un modelo y el precio deseado')
+                    msg.setWindowTitle('Error')
+                    msg.exec_()
+                else:
+                    self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[0].data()))
+                    self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[1].data())
+                    total = sum(self.pedidos['Precios'])
+                    self.pedidos['Total'] = total
+                    self.total.setText(f"Total: {total}")
+                    self.llenar_lista()
 
         elif len(self.tableview.selectedIndexes()) > 2:
             msg = qtw.QMessageBox()
@@ -414,9 +434,6 @@ class MainWindow(qtw.QMainWindow):
             msg.setText('Seleccione un modelo y el precio deseado')
             msg.setWindowTitle('Error')
             msg.exec_()
-
-        self.total.setText(f"Total: {total}")
-        self.llenar_lista()
 
     def terminar_pedido(self):
         if len(self.pedidos['Articulos']) == 0:
@@ -439,16 +456,10 @@ class MainWindow(qtw.QMainWindow):
             self.pedidos['Contacto'] = self.numero_cliente.text()
             self.pedidos['Observaciones'] = self.observaciones.toPlainText()
             if self.envio.text():
-                print('Hay texto')
                 self.pedidos['Articulos'].append('Envío')
                 self.pedidos['Precios'].append(float(self.envio.text()))
                 self.pedidos['Total'] += float(self.envio.text())
-            self.lista.clear()
-            self.total.setText('Total: 0')
-            self.nombre_cliente.clear()
-            self.numero_cliente.clear()
-            self.envio.clear()
-            self.observaciones.setPlainText('')
+            self.limpiar_campos()
             self.cargar_venta()
             self.detalle(self.pedidos)
 
@@ -483,21 +494,14 @@ class MainWindow(qtw.QMainWindow):
     def eliminar_item(self):
         row = self.lista.currentRow()
         data = self.lista.currentIndex().data()
-        del(self.pedidos['Articulos'][row])
-        del(self.pedidos['Precios'][row])
-        total1 = sum(self.pedidos['Precios'])
-        self.pedidos['Total'] = total1
-        self.total.setText(f"Total: {total1}")
-        self.llenar_lista()
-
-    def check_changes(self, functionCall):
-        try:
-            for name, obj in inspect.getmembers(self):
-                if isinstance(obj, qtw.QTableView):
-                    pass
-        except Exception as e:
-            print(e)
-
+        if data:
+            print(data)
+            del(self.pedidos['Articulos'][row])
+            del(self.pedidos['Precios'][row])
+            total1 = sum(self.pedidos['Precios'])
+            self.pedidos['Total'] = total1
+            self.total.setText(f"Total: {total1}")
+            self.llenar_lista()
 
     @qtc.pyqtSlot()
     def filter(self):
