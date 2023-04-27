@@ -2,11 +2,38 @@ import inspect
 import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
-from PyQt5.QtGui import QPixmap, QPainter
+from PyQt5.QtGui import QPixmap, QPainter, QIntValidator
 from PyQt5.QtPrintSupport import  QPrinter
 from PyQt5.Qt import QFileInfo
 import csv
 import pandas as pd
+
+
+class NuevoItemPino(qtw.QDialog):
+
+    def __init__(self, lst):
+        super().__init__()
+
+        self.box = qtw.QVBoxLayout()
+        self.setLayout(self.box)
+
+        self.l_miel = qtw.QLineEdit(placeholderText='Lista con miel')
+        self.cont_nat = qtw.QLineEdit(placeholderText='Contado natural')
+        self.cont_miel = qtw.QLineEdit(placeholderText='Contado con miel')
+        self.cont_alg = qtw.QLineEdit(placeholderText='Contado con algarrobo')
+        self.box.addWidget(self.l_miel)
+        self.box.addWidget(self.cont_nat)
+        self.box.addWidget(self.cont_miel)
+        self.box.addWidget(self.cont_alg)
+
+        self.box.addWidget(qtw.QPushButton('Añadir'))
+        self.box.addWidget(qtw.QPushButton('Cancelar'))
+
+        self.onlyInt = QIntValidator()
+        self.l_miel.setValidator(self.onlyInt)
+        self.cont_nat.setValidator(self.onlyInt)
+        self.cont_miel.setValidator(self.onlyInt)
+        self.cont_alg.setValidator(self.onlyInt)
 
 
 class CargarStock(qtw.QDialog):
@@ -59,7 +86,7 @@ class CargarStock(qtw.QDialog):
     @qtc.pyqtSlot(str)
     def set_complete_tipo(self, string=str):
         print('Signal!')
-        subset = self.stock[self.stock['Material'] == string]['Tipo de articulo']
+        subset = self.stock[self.stock['Material'] == string]['Tipo de articulo'].unique()
         self.completer_tipo = qtw.QCompleter(subset, self)
         self.completer_tipo.setFilterMode(qtc.Qt.MatchContains)
         self.completer_tipo.setCaseSensitivity(qtc.Qt.CaseInsensitive)
@@ -85,6 +112,7 @@ class CargarStock(qtw.QDialog):
             message = "Todos los campos deben estar completos"
             msg = qtw.QMessageBox()
             msg.setText(message)
+            msg.setIcon(qtw.QMessageBox.Warning)
             msg.setWindowTitle('Datos insuficientes')
             msg.exec_()
         else:
@@ -92,27 +120,34 @@ class CargarStock(qtw.QDialog):
             subset = self.stock[(self.stock['Material'] == material) &
                            (self.stock['Tipo de articulo'] == tipo) & (self.stock['Modelo'] == modelo)]
             if subset.empty:
-                """Chequear typos, o asimetría de formateo.
-                Si sigue sin existir, cargar item nuevo"""
                 msg = qtw.QMessageBox()
                 msg.setText('No se encontraron artículos con esas características.'
                             '¿Desea añadirlo como un artículo nuevo? ')
-                msg.exec_()
-                if msg.sender():
-                    dialog = qtw.QDialog()
-                    dialog.setLayout(qtw.QHBoxLayout())
-                    dialog.layout().addWidget(qtw.QLabel('Carga de precio'))
-                    dialog.exec_()
-
-                    #stock.loc[-1,
-                    #          ['Material', 'Tipo de articulo', 'Modelo', 'Cantidad']] = [material,
-                    #                                                                     tipo,
-                    #                                                                     modelo,
-                    #                                                                     cantidad]
+                # msg.addButton(qtw.QPushButton('Cancelar'), qtw.QMessageBox.NoRole)
+                msg.setStandardButtons(qtw.QMessageBox.Ok | qtw.QMessageBox.Cancel)
+                msg.setDefaultButton(qtw.QMessageBox.Ok)
+                # msg.buttonClicked.connect(self.nuevo_articulo)
+                ret = msg.exec_()
+                if ret == qtw.QMessageBox.Ok:
+                    print('ok')
+                    self.nuevo_articulo()
+                else:
+                    msg.close()
             else:
                 index = subset.index[0]
                 self.stock.loc[index, 'Cantidad'] += cantidad
                 self.stock.to_csv(self.filename, index=False)
+
+    @qtc.pyqtSlot()
+    def nuevo_articulo(self):
+        material = self.material.currentText()
+        tipo = self.tipo.text()
+        modelo = self.modelo.text()
+        cantidad = self.cantidad.value()
+        lst = [material, tipo, modelo, cantidad]
+        if material == 'Pino':
+            nuevo = NuevoItemPino(lst)
+            nuevo.exec_()
 
 
 class PedidoFinalizado(qtw.QDialog):
