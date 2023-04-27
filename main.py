@@ -70,14 +70,15 @@ class NuevoItemPino(qtw.QDialog):
             x = float(x)
             self.lst.append(x)
         stock = pd.read_csv('Stock.csv')
-        print('lock')
         stock.loc[-1, stock.columns] = self.lst
-        print('stock')
         stock.sort_values(by=['Material', 'Tipo de articulo'], inplace=True,
                           ignore_index=True, ascending=False)
-        print('and two')
         stock.to_csv('Stock.csv', index=False)
-        print('smoking barrels')
+        msg = qtw.QMessageBox()
+        msg.setWindowTitle(' ')
+        msg.setText('Se cargó el producto con éxito.')
+        msg.exec_()
+
 
 class CargarStock(qtw.QDialog):
     """Dialog para carga de stock"""
@@ -164,6 +165,7 @@ class CargarStock(qtw.QDialog):
                            (self.stock['Tipo de articulo'] == tipo) & (self.stock['Modelo'] == modelo)]
             if subset.empty:
                 msg = qtw.QMessageBox()
+                msg.setWindowTitle(' ')
                 msg.setText('No se encontraron artículos con esas características.'
                             '¿Desea añadirlo como un artículo nuevo? ')
                 # msg.addButton(qtw.QPushButton('Cancelar'), qtw.QMessageBox.NoRole)
