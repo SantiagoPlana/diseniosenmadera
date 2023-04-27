@@ -45,12 +45,23 @@ class CargarStock(qtw.QDialog):
         self.stock = pd.read_csv(self.filename)
         self.lista_tipos = self.stock['Tipo de articulo']
         self.lista_modelos = self.stock['Modelo']
-        self.completer_modelo = qtw.QCompleter(self.lista_modelos, self)
+        #self.completer_modelo = qtw.QCompleter(self.lista_modelos, self)
         self.completer_tipo = qtw.QCompleter(self.lista_tipos, self)
         self.completer_tipo.setCaseSensitivity(qtc.Qt.CaseInsensitive)
-        self.completer_modelo.setCaseSensitivity(qtc.Qt.CaseInsensitive)
+        self.completer_tipo.setFilterMode(qtc.Qt.MatchContains)
+        #self.completer_modelo.setCaseSensitivity(qtc.Qt.CaseInsensitive)
         self.tipo.setCompleter(self.completer_tipo)
-        self.modelo.setCompleter(self.completer_modelo)
+        self.completer_tipo.activated.connect(self.complete)
+        #self.modelo.setCompleter(self.completer_modelo)
+
+    @qtc.pyqtSlot(str)
+    def complete(self, string=str):
+        print('Signal!')
+        subset = self.stock[self.stock['Tipo de articulo'] == string]['Modelo']
+        completer = qtw.QCompleter(subset, self)
+        completer.setFilterMode(qtc.Qt.MatchContains)
+        completer.setCaseSensitivity(qtc.Qt.CaseInsensitive)
+        self.modelo.setCompleter(completer)
 
     def cargar(self):
         material = self.material.currentText()
