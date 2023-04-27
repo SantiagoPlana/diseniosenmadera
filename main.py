@@ -14,19 +14,32 @@ class NuevoItemPino(qtw.QDialog):
     def __init__(self, lst):
         super().__init__()
 
+        self.lst = lst
         self.box = qtw.QVBoxLayout()
         self.setLayout(self.box)
 
-        self.l_miel = qtw.QLineEdit(placeholderText='Lista con miel')
-        self.cont_nat = qtw.QLineEdit(placeholderText='Contado natural')
-        self.cont_miel = qtw.QLineEdit(placeholderText='Contado con miel')
-        self.cont_alg = qtw.QLineEdit(placeholderText='Contado con algarrobo')
+        self.l_miel = qtw.QLineEdit()
+        self.cont_nat = qtw.QLineEdit()
+        self.cont_miel = qtw.QLineEdit()
+        self.cont_alg = qtw.QLineEdit()
+        self.lista = qtw.QLineEdit()
+        self.contado = qtw.QLineEdit()
+        self.box.addWidget(qtw.QLabel('<b>Precios para pino</b>'))
+        self.box.addWidget(qtw.QLabel('Lista con miel'))
         self.box.addWidget(self.l_miel)
+        self.box.addWidget(qtw.QLabel('Contado natural'))
         self.box.addWidget(self.cont_nat)
+        self.box.addWidget(qtw.QLabel('Contado con miel'))
         self.box.addWidget(self.cont_miel)
+        self.box.addWidget(qtw.QLabel('Contado con algarrobo'))
         self.box.addWidget(self.cont_alg)
-
-        self.box.addWidget(qtw.QPushButton('Añadir'))
+        self.box.addWidget(qtw.QLabel('<b>Precios para algarrobo</b>'))
+        self.box.addWidget(qtw.QLabel('Precio de lista'))
+        self.box.addWidget(self.lista)
+        self.box.addWidget(qtw.QLabel('Precio de contado'))
+        self.box.addWidget(self.contado)
+        self.btn_agregar = qtw.QPushButton('Agregar')
+        self.box.addWidget(self.btn_agregar)
         self.box.addWidget(qtw.QPushButton('Cancelar'))
 
         self.onlyInt = QIntValidator()
@@ -34,7 +47,37 @@ class NuevoItemPino(qtw.QDialog):
         self.cont_nat.setValidator(self.onlyInt)
         self.cont_miel.setValidator(self.onlyInt)
         self.cont_alg.setValidator(self.onlyInt)
+        self.lista.setValidator(self.onlyInt)
+        self.contado.setValidator(self.onlyInt)
 
+        self.l_miel.setText('0')
+        self.cont_nat.setText('0')
+        self.cont_miel.setText('0')
+        self.cont_alg.setText('0')
+        self.lista.setText('0')
+        self.contado.setText('0')
+
+        self.btn_agregar.clicked.connect(self.cargar)
+
+    @qtc.pyqtSlot()
+    def cargar(self):
+        print('hey')
+        self.lst_precios = [self.l_miel.text(), self.cont_nat.text(), self.cont_miel.text(),
+                            self.cont_alg.text(),
+                            self.lista.text(), self.contado.text()]
+        for x in self.lst_precios:
+            print(x)
+            x = float(x)
+            self.lst.append(x)
+        stock = pd.read_csv('Stock.csv')
+        print('lock')
+        stock.loc[-1, stock.columns] = self.lst
+        print('stock')
+        stock.sort_values(by=['Material', 'Tipo de articulo'], inplace=True,
+                          ignore_index=True, ascending=False)
+        print('and two')
+        stock.to_csv('Stock.csv', index=False)
+        print('smoking barrels')
 
 class CargarStock(qtw.QDialog):
     """Dialog para carga de stock"""
@@ -145,9 +188,8 @@ class CargarStock(qtw.QDialog):
         modelo = self.modelo.text()
         cantidad = self.cantidad.value()
         lst = [material, tipo, modelo, cantidad]
-        if material == 'Pino':
-            nuevo = NuevoItemPino(lst)
-            nuevo.exec_()
+        nuevo = NuevoItemPino(lst)
+        nuevo.exec_()
 
 
 class PedidoFinalizado(qtw.QDialog):
