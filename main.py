@@ -41,6 +41,17 @@ class CargarStock(qtw.QDialog):
 
         self.material.addItems(['Pino', 'Algarrobo'])
 
+        self.filename = "Stock.csv"
+        self.stock = pd.read_csv(self.filename)
+        self.lista_tipos = self.stock['Tipo de articulo']
+        self.lista_modelos = self.stock['Modelo']
+        self.completer_modelo = qtw.QCompleter(self.lista_modelos, self)
+        self.completer_tipo = qtw.QCompleter(self.lista_tipos, self)
+        self.completer_tipo.setCaseSensitivity(qtc.Qt.CaseInsensitive)
+        self.completer_modelo.setCaseSensitivity(qtc.Qt.CaseInsensitive)
+        self.tipo.setCompleter(self.completer_tipo)
+        self.modelo.setCompleter(self.completer_modelo)
+
     def cargar(self):
         material = self.material.currentText()
         tipo = self.tipo.text()
@@ -54,44 +65,31 @@ class CargarStock(qtw.QDialog):
             msg.setWindowTitle('Datos insuficientes')
             msg.exec_()
         else:
-            filename, _ = qtw.QFileDialog.getOpenFileName(self,
-                                                          'Cargar tabla de stock',
-                                                          qtc.QDir.currentPath(),
-                                                          'CSV Files (*.csv) ;; All Files (*)'
-                                                          )
-            if filename:
-                stock = pd.read_csv(filename)
-                subset = stock[(stock['Material'] == material) &
-                               (stock['Tipo de articulo'] == tipo) & (stock['Modelo'] == modelo)]
-                if subset.empty:
-                    """Chequear typos, o asimetría de formateo.
-                    Si sigue sin existir, cargar item nuevo"""
-                    msg = qtw.QMessageBox()
-                    msg.setText('No se encontraron artículos con esas características.'
-                                '¿Desea añadirlo como un artículo nuevo? ')
-                    msg.exec_()
-                    if msg.sender():
-                        dialog = qtw.QDialog()
-                        dialog.setLayout(qtw.QHBoxLayout())
-                        dialog.layout().addWidget(qtw.QLabel('Carga de precio'))
-                        dialog.exec_()
-                        # self.win = qtw.QWidget()
-                        # self.win.setLayout(qtw.QHBoxLayout())
-                        # self.win.layout().addWidget(qtw.QLabel('Carga de precio'))
-                        # close_btn =
-                        # self.win.layout()
-                        # self.win.show()
+            # stock = pd.read_csv(self.filename)
+            subset = self.stock[(self.stock['Material'] == material) &
+                           (self.stock['Tipo de articulo'] == tipo) & (self.stock['Modelo'] == modelo)]
+            if subset.empty:
+                """Chequear typos, o asimetría de formateo.
+                Si sigue sin existir, cargar item nuevo"""
+                msg = qtw.QMessageBox()
+                msg.setText('No se encontraron artículos con esas características.'
+                            '¿Desea añadirlo como un artículo nuevo? ')
+                msg.exec_()
+                if msg.sender():
+                    dialog = qtw.QDialog()
+                    dialog.setLayout(qtw.QHBoxLayout())
+                    dialog.layout().addWidget(qtw.QLabel('Carga de precio'))
+                    dialog.exec_()
 
-
-                        #stock.loc[-1,
-                        #          ['Material', 'Tipo de articulo', 'Modelo', 'Cantidad']] = [material,
-                        #                                                                     tipo,
-                        #                                                                     modelo,
-                        #                                                                     cantidad]
-                else:
-                    index = subset.index[0]
-                    stock.loc[index, 'Cantidad'] += cantidad
-                    stock.to_csv(filename, index=False)
+                    #stock.loc[-1,
+                    #          ['Material', 'Tipo de articulo', 'Modelo', 'Cantidad']] = [material,
+                    #                                                                     tipo,
+                    #                                                                     modelo,
+                    #                                                                     cantidad]
+            else:
+                index = subset.index[0]
+                self.stock.loc[index, 'Cantidad'] += cantidad
+                self.stock.to_csv(self.filename, index=False)
 
 
 class PedidoFinalizado(qtw.QDialog):
@@ -632,6 +630,7 @@ class MainWindow(qtw.QMainWindow):
                     # print(nuevo_precio)
                     self.model._data[row][col] = nuevo_precio
                 self.statusBar().showMessage('Valores modificados correctamente.', 10000)
+
 
     def cargar_stock(self):
         try:
