@@ -2,7 +2,7 @@ import inspect
 import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
-from PyQt5.QtGui import QPixmap, QPainter, QIntValidator
+from PyQt5.QtGui import QPixmap, QPainter, QDoubleValidator
 from PyQt5.QtPrintSupport import  QPrinter
 from PyQt5.Qt import QFileInfo
 import csv
@@ -10,6 +10,7 @@ import pandas as pd
 
 
 class NuevoItemPino(qtw.QDialog):
+
 
     def __init__(self, lst):
         super().__init__()
@@ -39,10 +40,11 @@ class NuevoItemPino(qtw.QDialog):
         self.box.addWidget(qtw.QLabel('Precio de contado'))
         self.box.addWidget(self.contado)
         self.btn_agregar = qtw.QPushButton('Agregar')
+        self.btn_cancelar = qtw.QPushButton('Cancelar')
         self.box.addWidget(self.btn_agregar)
-        self.box.addWidget(qtw.QPushButton('Cancelar'))
+        self.box.addWidget(self.btn_cancelar)
 
-        self.onlyInt = QIntValidator()
+        self.onlyInt = QDoubleValidator()
         self.l_miel.setValidator(self.onlyInt)
         self.cont_nat.setValidator(self.onlyInt)
         self.cont_miel.setValidator(self.onlyInt)
@@ -58,10 +60,10 @@ class NuevoItemPino(qtw.QDialog):
         self.contado.setText('0')
 
         self.btn_agregar.clicked.connect(self.cargar)
+        self.btn_cancelar.clicked.connect(self.close)
 
     @qtc.pyqtSlot()
     def cargar(self):
-        print('hey')
         self.lst_precios = [self.l_miel.text(), self.cont_nat.text(), self.cont_miel.text(),
                             self.cont_alg.text(),
                             self.lista.text(), self.contado.text()]
@@ -69,6 +71,7 @@ class NuevoItemPino(qtw.QDialog):
             print(x)
             x = float(x)
             self.lst.append(x)
+        print([type(x) for x in self.lst])
         stock = pd.read_csv('Stock.csv')
         stock.loc[-1, stock.columns] = self.lst
         stock.sort_values(by=['Material', 'Tipo de articulo'], inplace=True,
@@ -83,8 +86,11 @@ class NuevoItemPino(qtw.QDialog):
 class CargarStock(qtw.QDialog):
     """Dialog para carga de stock"""
 
+    signalItemCargado = qtc.pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
+
         self.setSizeGripEnabled(True)
         self.grid = qtw.QGridLayout()
         self.grid.setSpacing(18)
@@ -114,7 +120,7 @@ class CargarStock(qtw.QDialog):
 
         self.filename = "Stock.csv"
         self.stock = pd.read_csv(self.filename)
-        self.lista_tipos = self.stock['Tipo de articulo']
+        self.lista_tipos = self.stock['Tipo de articulo'].unique()
         self.lista_modelos = self.stock['Modelo']
         self.completer_tipo = qtw.QCompleter(self.lista_tipos, self)
         self.completer_tipo.setCaseSensitivity(qtc.Qt.CaseInsensitive)
@@ -122,6 +128,8 @@ class CargarStock(qtw.QDialog):
         self.tipo.setCompleter(self.completer_tipo)
         self.material.currentTextChanged.connect(self.set_complete_tipo)
         self.completer_tipo.activated.connect(self.set_complete_modelo)
+
+        self.signalItemCargado.connect(self.msg_display)
 
         # self.completer_modelo = qtw.QCompleter(self.lista_modelos, self)
         # self.completer_modelo.setCaseSensitivity(qtc.Qt.CaseInsensitive)
@@ -168,13 +176,10 @@ class CargarStock(qtw.QDialog):
                 msg.setWindowTitle(' ')
                 msg.setText('No se encontraron artículos con esas características.'
                             '¿Desea añadirlo como un artículo nuevo? ')
-                # msg.addButton(qtw.QPushButton('Cancelar'), qtw.QMessageBox.NoRole)
                 msg.setStandardButtons(qtw.QMessageBox.Ok | qtw.QMessageBox.Cancel)
                 msg.setDefaultButton(qtw.QMessageBox.Ok)
-                # msg.buttonClicked.connect(self.nuevo_articulo)
                 ret = msg.exec_()
                 if ret == qtw.QMessageBox.Ok:
-                    print('ok')
                     self.nuevo_articulo()
                 else:
                     msg.close()
@@ -182,6 +187,17 @@ class CargarStock(qtw.QDialog):
                 index = subset.index[0]
                 self.stock.loc[index, 'Cantidad'] += cantidad
                 self.stock.to_csv(self.filename, index=False)
+                self.signalItemCargado.emit(
+                    f'{tipo} {modelo} de {material} x {cantidad} se cargó correctamente.'
+                )
+
+    @qtc.pyqtSlot(str)
+    def msg_display(self, string):
+        msg = qtw.QMessageBox()
+        msg.setText(string)
+        msg.setWindowTitle(' ')
+        msg.setIcon(qtw.QMessageBox.NoIcon)
+        msg.exec_()
 
     @qtc.pyqtSlot()
     def nuevo_articulo(self):
@@ -270,13 +286,10 @@ class PedidoFinalizado(qtw.QDialog):
                 printer = QPrinter(QPrinter.HighResolution)
                 printer.setOutputFormat(QPrinter.PdfFormat)
                 printer.setOutputFileName(filename)
-                # printer = QPrinter()
-                # printer.setOutputFormat(QPrinter.PdfFormat)
-                # printer.setOutputFileName("Test.pdf")
 
                 painter = QPainter(printer)
                 xscale = printer.pageRect().width() / self.width()
-                yscale = printer.pageRect().height() / self.height()
+                yscale = (printer.pageRect().height() / self.height())
                 scale = min(xscale, yscale)
                 painter.translate(printer.paperRect().center())
                 painter.scale(scale, scale)
@@ -383,7 +396,7 @@ class MainWindow(qtw.QMainWindow):
                'Precios': [],
                'Total': 0,
                'Observaciones': ''}
-    float_signal = qtc.pyqtSignal(float)
+    # float_signal = qtc.pyqtSignal(float)
 
     def __init__(self):
         """MainWindow constructor."""
@@ -733,11 +746,11 @@ class MainWindow(qtw.QMainWindow):
                     self.model._data[row][col] = nuevo_precio
                 self.statusBar().showMessage('Valores modificados correctamente.', 10000)
 
-
     def cargar_stock(self):
         try:
             stock_window = CargarStock()
-            stock_window.exec()
+            stock_window.exec_()
+
         except Exception as e:
             print(e)
 
