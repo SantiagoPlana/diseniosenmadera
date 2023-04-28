@@ -1,4 +1,3 @@
-import inspect
 import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
@@ -396,7 +395,8 @@ class MainWindow(qtw.QMainWindow):
                'Precios': [],
                'Total': 0,
                'Observaciones': ''}
-    # float_signal = qtc.pyqtSignal(float)
+
+    msg_signal = qtc.pyqtSignal(str)
 
     def __init__(self):
         """MainWindow constructor."""
@@ -606,12 +606,18 @@ class MainWindow(qtw.QMainWindow):
         global total
         if len(self.tableview.selectedIndexes()) == 2:
             try:
+                item_idx = self.tableview.selectedIndexes()[0]
+                row = item_idx.row()
+                col = item_idx.column() - 1
+                tipo = self.model._data[row][col]
                 self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
-                self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[0].data())
+                self.pedidos['Articulos'].append(tipo + ' ' +
+                                                 self.tableview.selectedIndexes()[0].data())
                 total = sum(self.pedidos['Precios'])
                 self.pedidos['Total'] = total
                 self.total.setText(f"Total: {total}")
                 self.llenar_lista()
+
             except Exception as e:
                 if 'string' in str(e):
                     msg = qtw.QMessageBox()
@@ -645,19 +651,11 @@ class MainWindow(qtw.QMainWindow):
 
     def terminar_pedido(self):
         if len(self.pedidos['Articulos']) == 0:
-            msg = qtw.QMessageBox()
-            # msg.setIcon(qtw.QMessageBox.Critical)
-            msg.setText('Seleccione al menos un artículo.')
-            msg.setWindowTitle('Pedido vacío')
-            print(len(self.nombre_cliente.text()))
-            msg.exec_()
+            msg = 'Seleccione al menos un artículo.'
+            self.display_msg(msg)
         elif len(self.nombre_cliente.text()) == 0 or len(self.numero_cliente.text()) == 0:
-            msg = qtw.QMessageBox()
-            # msg.setIcon(qtw.QMessageBox.Critical)
-            msg.setText('Los datos están incompletos.')
-            msg.setWindowTitle('Datos incompletos')
-            # msg.addButton('Continuar', clicked=msg.accept)
-            msg.exec_()
+            msg = 'Los datos están incompletos.'
+            self.display_msg(msg)
         else:
             self.pedidos['Fecha'] = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
             self.pedidos['Cliente'] = self.nombre_cliente.text()
@@ -670,6 +668,14 @@ class MainWindow(qtw.QMainWindow):
             self.limpiar_campos()
             self.cargar_venta()
             self.detalle(self.pedidos)
+
+    def descontar_stock(self):
+        new_dic = {}
+        for i in self.pedidos['Articulos']:
+            if i not in new_dic:
+                new_dic[i] = 1
+            else:
+                new_dic[i] += 1
 
     def cargar_venta(self):
         ventas = pd.read_csv('Ventas_nuevo.csv')
@@ -739,10 +745,8 @@ class MainWindow(qtw.QMainWindow):
                     col = idx.column()
                     idx = float(idx.data())
                     print(row, col, idx)
-                    # porcentaje = porcentaje / 100
                     nuevo_precio = idx + (idx * porcentaje)
                     print(nuevo_precio)
-                    # print(nuevo_precio)
                     self.model._data[row][col] = nuevo_precio
                 self.statusBar().showMessage('Valores modificados correctamente.', 10000)
 
@@ -750,15 +754,19 @@ class MainWindow(qtw.QMainWindow):
         try:
             stock_window = CargarStock()
             stock_window.exec_()
-
         except Exception as e:
-            print(e)
+            self.statusBar().showMessage(str(e))
 
     @qtc.pyqtSlot()
     def filter(self):
         index = self.filtrar_por.currentIndex()
         self.filter_proxy_model.setFilterKeyColumn(index)
 
+    def display_msg(self, string):
+        msg = qtw.QMessageBox()
+        msg.setText(string)
+        msg.setWindowTitle(' ')
+        msg.exec_()
 
 if __name__ == '__main__':
     app = qtw.QApplication(sys.argv)
