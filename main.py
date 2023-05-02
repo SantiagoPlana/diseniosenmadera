@@ -1,11 +1,12 @@
 import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
-from PyQt5.QtGui import QPixmap, QPainter, QDoubleValidator
+from PyQt5.QtGui import QPixmap, QPainter, QDoubleValidator, QPalette, QColor
 from PyQt5.QtPrintSupport import  QPrinter
 from PyQt5.Qt import QFileInfo
 import csv
 import pandas as pd
+from pdf import PDF, generate_pdf
 
 
 class NuevoItemPino(qtw.QDialog):
@@ -231,7 +232,7 @@ class PedidoFinalizado(qtw.QDialog):
 
         self.accept_btn = qtw.QPushButton('Emitir', clicked=self.accept)
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
-        self.print_btn = qtw.QPushButton('Exportar a PDF', clicked=self.guardar_pedido)
+        self.print_btn = qtw.QPushButton('Exportar a PDF')
 
         # Layout
         self.grid.addWidget(
@@ -271,6 +272,11 @@ class PedidoFinalizado(qtw.QDialog):
         self.grid.addWidget(self.accept_btn, count + 3, 0)
         self.grid.addWidget(self.cancel_btn, count + 3, 2)
         self.grid.addWidget(self.print_btn, count + 3, 1)
+
+        self.print_btn.clicked.connect(lambda: self.pdf(self.dic, new_dic))
+
+    def pdf(self, dic1, dic2):
+        generate_pdf(dic1, dic2)
 
     def guardar_pedido(self):
         """Exportar a PDF"""
@@ -615,6 +621,8 @@ class MainWindow(qtw.QMainWindow):
         if len(self.pedidos['Articulos']) > 0:
             for i in range(len(self.pedidos['Articulos'])):
                 self.lista.addItem(f"{self.pedidos['Articulos'][i]} --- {self.pedidos['Precios'][i]}")
+        # self.lista.setPalette(QPalette.Window)
+        # self.lista.setPalette(QPalette.color(QColor.red()))
 
     def agregar_art(self):
         global total
@@ -759,11 +767,8 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos[k] = ''
 
     def eliminar_item(self):
-        print(self.lista.selectedItems())
-        # self.lista.selectedItems().clear()
         rows = []
         for index in self.lista.selectedIndexes():
-            print(index.row())
             rows.append(index.row())
         data = self.lista.currentIndex().data()
         if data:
