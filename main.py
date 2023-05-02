@@ -247,12 +247,12 @@ class PedidoFinalizado(qtw.QDialog):
         self.grid.addWidget(qtw.QLabel(f"<h4>Concepto: </h4>"), 6, 0)
         count = 8
         new_dic = {}
-        for i in self.dic['Articulos']:
+        for i in self.dic['Articulo']:
             if i not in new_dic:
                 new_dic[i] = [1]
             else:
                 new_dic[i][0] += 1
-            idx = self.dic['Articulos'].index(i)
+            idx = self.dic['Articulo'].index(i)
             if len(new_dic[i]) == 1:
                 new_dic[i].append(self.dic['Precios'][idx])
             else:
@@ -392,7 +392,8 @@ class MainWindow(qtw.QMainWindow):
                'Cliente': '',
                'Contacto': '',
                'Tipo': [],
-               'Articulos': [],
+               'Modelo': [],
+               'Articulo': [],
                'Precios': [],
                'Total': 0,
                'Observaciones': ''}
@@ -599,9 +600,9 @@ class MainWindow(qtw.QMainWindow):
 
     def llenar_lista(self):
         self.lista.clear()
-        if len(self.pedidos['Articulos']) > 0:
-            for i in range(len(self.pedidos['Articulos'])):
-                self.lista.addItem(f"{self.pedidos['Articulos'][i]} --- {self.pedidos['Precios'][i]}")
+        if len(self.pedidos['Articulo']) > 0:
+            for i in range(len(self.pedidos['Articulo'])):
+                self.lista.addItem(f"{self.pedidos['Articulo'][i]} --- {self.pedidos['Precios'][i]}")
 
     def agregar_art(self):
         global total
@@ -611,9 +612,12 @@ class MainWindow(qtw.QMainWindow):
                 row = item_idx.row()
                 col = item_idx.column() - 1
                 tipo = self.model._data[row][col]
+                modelo = self.tableview.selectedIndexes()[0].data()
+                art = tipo + ' ' + modelo
                 self.pedidos['Tipo'].append(tipo)
                 self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
-                self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[0].data())
+                self.pedidos['Modelo'].append(modelo)
+                self.pedidos['Articulo'].append(art)
                 total = sum(self.pedidos['Precios'])
                 self.pedidos['Total'] = total
                 self.total.setText(f"Total: {total}")
@@ -632,9 +636,12 @@ class MainWindow(qtw.QMainWindow):
                     row = item_idx.row()
                     col = item_idx.column() - 1
                     tipo = self.model._data[row][col]
+                    modelo = self.tableview.selectedIndexes()[1].data()
+                    art = tipo + ' ' + modelo
                     self.pedidos['Tipo'].append(tipo)
                     self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[0].data()))
-                    self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[1].data())
+                    self.pedidos['Modelo'].append(self.tableview.selectedIndexes()[1].data())
+                    self.pedidos['Articulo'].append(modelo)
                     total = sum(self.pedidos['Precios'])
                     self.pedidos['Total'] = total
                     self.total.setText(f"Total: {total}")
@@ -656,7 +663,7 @@ class MainWindow(qtw.QMainWindow):
             msg.exec_()
 
     def terminar_pedido(self):
-        if len(self.pedidos['Articulos']) == 0:
+        if len(self.pedidos['Articulo']) == 0:
             msg = 'Seleccione al menos un artículo.'
             self.display_msg(msg)
         elif len(self.nombre_cliente.text()) == 0 or len(self.numero_cliente.text()) == 0:
@@ -669,7 +676,8 @@ class MainWindow(qtw.QMainWindow):
             self.pedidos['Observaciones'] = self.observaciones.toPlainText()
             if self.envio.text():
                 self.pedidos['Tipo'].append('Envío')
-                self.pedidos['Articulos'].append('Envío')
+                self.pedidos['Modelo'].append('Envío')
+                self.pedidos['Articulo'].append('Envío')
                 self.pedidos['Precios'].append(float(self.envio.text()))
                 self.pedidos['Total'] += float(self.envio.text())
             self.limpiar_campos()
@@ -680,10 +688,10 @@ class MainWindow(qtw.QMainWindow):
     def descontar_stock(self):
         new_dic = {}
         stock = pd.read_csv('Stock.csv')
-        for index in range(len(self.pedidos['Articulos'])):  # Conteo de items
-            modelo = self.pedidos['Articulos'][index]
+        for index in range(len(self.pedidos['Modelo'])):  # Conteo de items
+            modelo = self.pedidos['Modelo'][index]
             tipo = self.pedidos['Tipo'][index]
-            item = tipo + ' '+ modelo
+            item = self.pedidos['Articulo'][index]
             if item not in new_dic:
                 new_dic[item] = []
                 new_dic[item].append(1)
@@ -709,7 +717,6 @@ class MainWindow(qtw.QMainWindow):
 
     def cargar_venta(self):
         ventas = pd.read_csv('Ventas_nuevo.csv')
-        # ventas.loc[len(ventas) + 1, self.pedidos.keys()] = self.pedidos.values()
         row = len(ventas)
         for k, v in self.pedidos.items():
             try:
@@ -730,7 +737,7 @@ class MainWindow(qtw.QMainWindow):
         for k in self.pedidos.keys():
             if k == 'Total':
                 self.pedidos[k] = 0
-            elif k == 'Articulos' or k == 'Precios' or k == 'Tipo':
+            elif k == 'Articulo' or k == 'Precios' or k == 'Tipo' or k == 'Modelo':
                 self.pedidos[k] = []
             else:
                 self.pedidos[k] = ''
