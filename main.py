@@ -638,7 +638,7 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
                 self.pedidos['Modelo'].append(modelo)
                 self.pedidos['Articulos'].append(art)
-                total = sum(self.pedidos['Precios'])
+                total = round(sum(self.pedidos['Precios']))
                 self.pedidos['Total'] = total
                 self.total.setText(f"Total: {total}")
                 self.llenar_lista()
@@ -660,9 +660,9 @@ class MainWindow(qtw.QMainWindow):
                     art = tipo + ' ' + modelo
                     self.pedidos['Tipo'].append(tipo)
                     self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[0].data()))
-                    self.pedidos['Modelo'].append(self.tableview.selectedIndexes()[1].data())
-                    self.pedidos['Articulos'].append(modelo)
-                    total = sum(self.pedidos['Precios'])
+                    self.pedidos['Modelo'].append(modelo)
+                    self.pedidos['Articulos'].append(art)
+                    total = round(sum(self.pedidos['Precios']))
                     self.pedidos['Total'] = total
                     self.total.setText(f"Total: {total}")
                     self.llenar_lista()
@@ -726,10 +726,8 @@ class MainWindow(qtw.QMainWindow):
                     stock.iloc[index, 3] -= new_dic[i][0]
                 else:
                     """Check for tipo de artículo"""
-
                     index = stock[(stock['Modelo'] == new_dic[i][2]) &
                                   (stock['Tipo de articulo'] == new_dic[i][1])].index
-
                     stock.iloc[index, 3] -= new_dic[i][0]
             except Exception as e:
                 print(e)
@@ -777,7 +775,7 @@ class MainWindow(qtw.QMainWindow):
                 del(self.pedidos['Modelo'][row])
                 del(self.pedidos['Tipo'][row])
                 del(self.pedidos['Precios'][row])
-            total1 = sum(self.pedidos['Precios'])
+            total1 = round(sum(self.pedidos['Precios']))
             self.pedidos['Total'] = total1
             self.total.setText(f"Total: {total1}")
             self.llenar_lista()
@@ -789,10 +787,7 @@ class MainWindow(qtw.QMainWindow):
                                               'Porcentaje: ',
                                               qtw.QLineEdit.Normal,
                                               0, 100)
-        # user_input.setDoubleDecimals(10)
-
         if porcentaje and ok:
-            print(porcentaje)
             self.calcular_porcentaje(porcentaje)
 
     def calcular_porcentaje(self, porcentaje):
@@ -804,16 +799,21 @@ class MainWindow(qtw.QMainWindow):
             msg.exec_()
             if msg.sender():
                 # print('Accepted')
-                porcentaje = porcentaje / 100
-                for idx in idxs:
-                    row = idx.row()
-                    col = idx.column()
-                    idx = float(idx.data())
-                    print(row, col, idx)
-                    nuevo_precio = idx + (idx * porcentaje)
-                    print(nuevo_precio)
-                    self.model._data[row][col] = nuevo_precio
-                self.statusBar().showMessage('Valores modificados correctamente.', 10000)
+                try:
+                    porcentaje = porcentaje / 100
+                    for idx in idxs:
+                        row = idx.row()
+                        col = idx.column()
+                        idx = float(idx.data())
+                        print(row, col, idx)
+                        nuevo_precio = idx + (idx * porcentaje)
+                        print(nuevo_precio)
+                        self.model._data[row][col] = nuevo_precio
+                        self.statusBar().showMessage('Valores modificados correctamente.', 10000)
+                except Exception as e:
+                    msg = 'Seleccione únicamente celdas que contengan números.'
+                    self.display_msg(msg, icon=qtw.QMessageBox.Critical,
+                                     informativeText=e)
 
     def cargar_stock(self):
         try:
@@ -827,10 +827,16 @@ class MainWindow(qtw.QMainWindow):
         index = self.filtrar_por.currentIndex()
         self.filter_proxy_model.setFilterKeyColumn(index)
 
-    def display_msg(self, string):
+    def display_msg(self, string, **kwargs):
         msg = qtw.QMessageBox()
         msg.setText(string)
-        msg.setWindowTitle(' ')
+        for k, v in kwargs.items():
+            setattr(msg, k, v)
+        try:
+            msg.setInformativeText(str(kwargs.get('informativeText', ' ')))
+            msg.setIcon(kwargs.get('icon', None))
+        except Exception as e:
+            print(e)
         msg.exec_()
 
 
