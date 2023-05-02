@@ -439,7 +439,8 @@ class MainWindow(qtw.QMainWindow):
         edit_menu.addAction('Eliminar fila(s)', self.remove_rows)
 
         toolbar = self.addToolBar('Barra de tareas')
-        toolbar.addAction('Cargar Ventas', self.cargar_tabla_ventas)
+        toolbar.addAction('Abrir Ventas', self.cargar_tabla_ventas)
+        toolbar.addAction('Abrir Stock', self.cargar_tabla_stock)
         toolbar.addAction('Aplicar porcentaje', self.porcentaje)
         toolbar.addAction('Cargar stock', self.cargar_stock)
         toolbar.setFloatable(False)
@@ -455,12 +456,12 @@ class MainWindow(qtw.QMainWindow):
         self.setDockNestingEnabled(True)
         # dock2 = qtw.QDockWidget('Filtros')
         self.addDockWidget(qtc.Qt.RightDockWidgetArea, dock)
+        pedido_widget = qtw.QWidget()
+        pedido_widget.setLayout(grid_1)
         filter_widget = qtw.QWidget()
-        filter_widget.setLayout(grid_1)
-        second_widget = qtw.QWidget()
-        second_widget.setLayout(grid_2)
-        dock.setWidget(filter_widget)
-        dock2.setWidget(second_widget)
+        filter_widget.setLayout(grid_2)
+        dock.setWidget(pedido_widget)
+        dock2.setWidget(filter_widget)
 
         # Widgets
         self.articulo = qtw.QLineEdit()
@@ -477,7 +478,9 @@ class MainWindow(qtw.QMainWindow):
         # Status bar
         self.statusBar().showMessage('...')
 
+        # Config
         self.lista.setAlternatingRowColors(True)
+        self.lista.setSelectionMode(qtw.QAbstractItemView.ExtendedSelection)
         # Agregar categorías
         # self.lista.setFont()
 
@@ -490,21 +493,21 @@ class MainWindow(qtw.QMainWindow):
         # self.btn_cargar = qtw.QPushButton('Cargar Tabla')
 
         # Layout
-        filter_widget.layout().addWidget(self.nombre_cliente, 1, 0)
-        filter_widget.layout().addWidget(self.numero_cliente, 2, 0)
-        filter_widget.layout().addWidget(self.lista, 3, 0, 1, 4)
-        filter_widget.layout().addWidget(self.envio, 4, 0)
-        filter_widget.layout().addWidget(self.total, 4, 1)
-        filter_widget.layout().addWidget(self.btn_agregar, 5, 0)
-        filter_widget.layout().addWidget(self.btn_eliminar, 5, 1)
+        pedido_widget.layout().addWidget(self.nombre_cliente, 1, 0)
+        pedido_widget.layout().addWidget(self.numero_cliente, 2, 0)
+        pedido_widget.layout().addWidget(self.lista, 3, 0, 1, 4)
+        pedido_widget.layout().addWidget(self.envio, 4, 0)
+        pedido_widget.layout().addWidget(self.total, 4, 1)
+        pedido_widget.layout().addWidget(self.btn_agregar, 5, 0)
+        pedido_widget.layout().addWidget(self.btn_eliminar, 5, 1)
 
-        filter_widget.layout().addWidget(self.observaciones, 6, 0, 1, 4)
-        filter_widget.layout().addWidget(self.btn_pedido, 7, 0)
+        pedido_widget.layout().addWidget(self.observaciones, 6, 0, 1, 4)
+        pedido_widget.layout().addWidget(self.btn_pedido, 7, 0)
 
-        second_widget.layout().addWidget(qtw.QLabel('Filtro'), 1, 0)
-        second_widget.layout().addWidget(self.articulo, 2, 0)
-        second_widget.layout().addWidget(qtw.QLabel('Filtrar por'), 1, 1)
-        second_widget.layout().addWidget(self.filtrar_por, 2, 1)
+        filter_widget.layout().addWidget(qtw.QLabel('Filtro'), 1, 0)
+        filter_widget.layout().addWidget(self.articulo, 2, 0)
+        filter_widget.layout().addWidget(qtw.QLabel('Filtrar por'), 1, 1)
+        filter_widget.layout().addWidget(self.filtrar_por, 2, 1)
 
         # Proxy model
         self.filter_proxy_model = qtc.QSortFilterProxyModel()
@@ -557,8 +560,17 @@ class MainWindow(qtw.QMainWindow):
         self.filtrar_por.clear()
         self.filtrar_por.addItems(self.model._headers)
         self.statusBar().showMessage('Tabla de ventas')
+        self.tableview.resizeColumnToContents(5)
 
-        #self.tableview.resizeColumnsToContents()
+    def cargar_tabla_stock(self):
+        filename = 'Stock.csv'
+        self.model = CsvTableModel(filename)
+        self.filter_proxy_model.setSourceModel(self.model)
+        self.tableview.setModel(self.filter_proxy_model)
+        self.filtrar_por.clear()
+        self.filtrar_por.addItems(self.model._headers)
+        self.statusBar().showMessage('Tabla de stock', 10000)
+        self.tableview.resizeColumnsToContents()
 
     def save_file(self):
         if self.model:
@@ -747,14 +759,19 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos[k] = ''
 
     def eliminar_item(self):
-        row = self.lista.currentRow()
+        print(self.lista.selectedItems())
+        # self.lista.selectedItems().clear()
+        rows = []
+        for index in self.lista.selectedIndexes():
+            print(index.row())
+            rows.append(index.row())
         data = self.lista.currentIndex().data()
         if data:
-            print(data)
-            del(self.pedidos['Articulos'][row])
-            del(self.pedidos['Modelo'][row])
-            del(self.pedidos['Tipo'][row])
-            del(self.pedidos['Precios'][row])
+            for row in sorted(rows, reverse=True):
+                del(self.pedidos['Articulos'][row])
+                del(self.pedidos['Modelo'][row])
+                del(self.pedidos['Tipo'][row])
+                del(self.pedidos['Precios'][row])
             total1 = sum(self.pedidos['Precios'])
             self.pedidos['Total'] = total1
             self.total.setText(f"Total: {total1}")
