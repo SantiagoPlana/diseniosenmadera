@@ -391,6 +391,7 @@ class MainWindow(qtw.QMainWindow):
     pedidos = {'Fecha': '',
                'Cliente': '',
                'Contacto': '',
+               'Tipo': [],
                'Articulos': [],
                'Precios': [],
                'Total': 0,
@@ -610,9 +611,9 @@ class MainWindow(qtw.QMainWindow):
                 row = item_idx.row()
                 col = item_idx.column() - 1
                 tipo = self.model._data[row][col]
+                self.pedidos['Tipo'].append(tipo)
                 self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
-                self.pedidos['Articulos'].append(tipo + ' ' +
-                                                 self.tableview.selectedIndexes()[0].data())
+                self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[0].data())
                 total = sum(self.pedidos['Precios'])
                 self.pedidos['Total'] = total
                 self.total.setText(f"Total: {total}")
@@ -627,6 +628,11 @@ class MainWindow(qtw.QMainWindow):
                     msg.setWindowTitle('Error')
                     msg.exec_()
                 else:
+                    item_idx = self.tableview.selectedIndexes()[1]
+                    row = item_idx.row()
+                    col = item_idx.column() - 1
+                    tipo = self.model._data[row][col]
+                    self.pedidos['Tipo'].append(tipo)
                     self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[0].data()))
                     self.pedidos['Articulos'].append(self.tableview.selectedIndexes()[1].data())
                     total = sum(self.pedidos['Precios'])
@@ -662,20 +668,44 @@ class MainWindow(qtw.QMainWindow):
             self.pedidos['Contacto'] = self.numero_cliente.text()
             self.pedidos['Observaciones'] = self.observaciones.toPlainText()
             if self.envio.text():
+                self.pedidos['Tipo'].append('Envío')
                 self.pedidos['Articulos'].append('Envío')
                 self.pedidos['Precios'].append(float(self.envio.text()))
                 self.pedidos['Total'] += float(self.envio.text())
             self.limpiar_campos()
             self.cargar_venta()
+            self.descontar_stock()
             self.detalle(self.pedidos)
 
     def descontar_stock(self):
         new_dic = {}
-        for i in self.pedidos['Articulos']:
-            if i not in new_dic:
-                new_dic[i] = 1
+        stock = pd.read_csv('Stock.csv')
+        for index in range(len(self.pedidos['Articulos'])):  # Conteo de items
+            modelo = self.pedidos['Articulos'][index]
+            tipo = self.pedidos['Tipo'][index]
+            item = tipo + ' '+ modelo
+            if item not in new_dic:
+                new_dic[item] = []
+                new_dic[item].append(1)
+                new_dic[item].append(tipo)
+                new_dic[item].append(modelo)
             else:
-                new_dic[i] += 1
+                new_dic[item][0] += 1
+        for i in new_dic:
+            try:
+                if len(stock[stock['Modelo'] == new_dic[i][2]]['Cantidad']) == 1:  # Si hay un único modelo descontamos
+                    index = stock[stock['Modelo'] == new_dic[i][2]].loc[:, 'Cantidad'].index
+                    stock.iloc[index, 3] -= new_dic[i][0]
+                else:
+                    """Check for tipo de artículo"""
+
+                    index = stock[(stock['Modelo'] == new_dic[i][2]) &
+                                  (stock['Tipo de articulo'] == new_dic[i][1])].index
+
+                    stock.iloc[index, 3] -= new_dic[i][0]
+            except Exception as e:
+                print(e)
+        stock.to_csv('Stock.csv', index=False)
 
     def cargar_venta(self):
         ventas = pd.read_csv('Ventas_nuevo.csv')
@@ -700,7 +730,7 @@ class MainWindow(qtw.QMainWindow):
         for k in self.pedidos.keys():
             if k == 'Total':
                 self.pedidos[k] = 0
-            elif k == 'Articulos' or k == 'Precios':
+            elif k == 'Articulos' or k == 'Precios' or k == 'Tipo':
                 self.pedidos[k] = []
             else:
                 self.pedidos[k] = ''
@@ -767,6 +797,7 @@ class MainWindow(qtw.QMainWindow):
         msg.setText(string)
         msg.setWindowTitle(' ')
         msg.exec_()
+
 
 if __name__ == '__main__':
     app = qtw.QApplication(sys.argv)
