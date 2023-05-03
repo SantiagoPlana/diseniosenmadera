@@ -1,7 +1,7 @@
 import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
-from PyQt5.QtGui import QPixmap, QPainter, QDoubleValidator, QPalette, QColor
+from PyQt5.QtGui import QPixmap, QPainter, QDoubleValidator, QIcon
 from PyQt5.QtPrintSupport import  QPrinter
 from PyQt5.Qt import QFileInfo
 import csv
@@ -15,6 +15,7 @@ class NuevoItemPino(qtw.QDialog):
     def __init__(self, lst):
         super().__init__()
 
+        self.setWindowIcon(QIcon('diseñosenmadera2.png'))
         self.lst = lst
         self.box = qtw.QVBoxLayout()
         self.setLayout(self.box)
@@ -91,6 +92,7 @@ class CargarStock(qtw.QDialog):
     def __init__(self):
         super().__init__()
 
+        self.setWindowIcon(QIcon('diseñosenmadera2.png'))
         self.setSizeGripEnabled(True)
         self.grid = qtw.QGridLayout()
         self.grid.setSpacing(18)
@@ -194,6 +196,7 @@ class CargarStock(qtw.QDialog):
     @qtc.pyqtSlot(str)
     def msg_display(self, string):
         msg = qtw.QMessageBox()
+        msg.setWindowIcon(QIcon('diseñosenmadera2.png'))
         msg.setText(string)
         msg.setWindowTitle(' ')
         msg.setIcon(qtw.QMessageBox.NoIcon)
@@ -216,6 +219,7 @@ class PedidoFinalizado(qtw.QDialog):
     def __init__(self, dic=dict):
         super().__init__(modal=True)
         self.setMinimumSize(400, 400)
+        self.setWindowIcon(QIcon('diseñosenmadera2.png'))
         self.grid = qtw.QGridLayout()
         # self.grid.setRowStretch(1, 4)
         self.grid.setSpacing(18)
@@ -423,6 +427,7 @@ class MainWindow(qtw.QMainWindow):
 
         # Main UI
         self.setWindowTitle('Diseños en Madera')
+        self.setWindowIcon(QIcon('diseñosenmadera2.png'))
         self.resize(1380, 600)
         self.center()
         self.tableview = qtw.QTableView()
@@ -812,6 +817,7 @@ class MainWindow(qtw.QMainWindow):
 
     def display_msg(self, string, **kwargs):
         msg = qtw.QMessageBox()
+        msg.setWindowIcon(QIcon('diseñosenmadera2.png'))
         msg.setText(string)
         for k, v in kwargs.items():
             setattr(msg, k, v)
