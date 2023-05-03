@@ -273,10 +273,7 @@ class PedidoFinalizado(qtw.QDialog):
         self.grid.addWidget(self.cancel_btn, count + 3, 2)
         self.grid.addWidget(self.print_btn, count + 3, 1)
 
-        self.print_btn.clicked.connect(lambda: self.pdf(self.dic, new_dic))
-
-    def pdf(self, dic1, dic2):
-        generate_pdf(dic1, dic2)
+        self.print_btn.clicked.connect(lambda: generate_pdf(self.dic, new_dic))
 
     def guardar_pedido(self):
         """Exportar a PDF"""
@@ -642,15 +639,16 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos['Total'] = total
                 self.total.setText(f"Total: {total}")
                 self.llenar_lista()
-
             except Exception as e:
-                if 'string' in str(e):
-                    msg = qtw.QMessageBox()
-                    msg.setIcon(qtw.QMessageBox.Critical)
-                    # msg.setText('Error')
-                    msg.setText('Seleccione un modelo y el precio deseado')
-                    msg.setWindowTitle('Error')
-                    msg.exec_()
+                if len(self.tableview.selectedIndexes()) > 2:
+                    msg = 'Seleccione solo un modelo y el precio deseado'
+                    self.display_msg(msg, icon=qtw.QMessageBox.Warning,
+                                     windowTitle='Demasiadas celdas seleccionadas')
+                    print(e)
+                elif len(self.tableview.selectedIndexes()) < 2:
+                    msg = 'Seleccione un modelo y el precio deseado.'
+                    self.display_msg(msg, icon=qtw.QMessageBox.Warning,
+                                     windowTitle='Datos insuficientes')
                 else:
                     item_idx = self.tableview.selectedIndexes()[1]
                     row = item_idx.row()
@@ -667,28 +665,13 @@ class MainWindow(qtw.QMainWindow):
                     self.total.setText(f"Total: {total}")
                     self.llenar_lista()
 
-        elif len(self.tableview.selectedIndexes()) > 2:
-            msg = qtw.QMessageBox()
-            msg.setIcon(qtw.QMessageBox.Critical)
-            # msg.setText('Error')
-            msg.setText('Seleccione solo un modelo y el precio deseado')
-            msg.setWindowTitle('Error')
-            msg.exec_()
-        else:
-            msg = qtw.QMessageBox()
-            msg.setIcon(qtw.QMessageBox.Critical)
-            # msg.setText('Error')
-            msg.setText('Seleccione un modelo y el precio deseado')
-            msg.setWindowTitle('Error')
-            msg.exec_()
-
     def terminar_pedido(self):
         if len(self.pedidos['Articulos']) == 0:
             msg = 'Seleccione al menos un artículo.'
-            self.display_msg(msg)
+            self.display_msg(msg, icon=qtw.QMessageBox.Warning, windowTitle='Pedido vacío')
         elif len(self.nombre_cliente.text()) == 0 or len(self.numero_cliente.text()) == 0:
-            msg = 'Los datos están incompletos.'
-            self.display_msg(msg)
+            msg = 'Complete los datos del cliente antes de finalizar el pedido.'
+            self.display_msg(msg, icon=qtw.QMessageBox.Warning, windowTitle='Datos incompletos')
         else:
             self.pedidos['Fecha'] = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
             self.pedidos['Cliente'] = self.nombre_cliente.text()
@@ -813,7 +796,7 @@ class MainWindow(qtw.QMainWindow):
                 except Exception as e:
                     msg = 'Seleccione únicamente celdas que contengan números.'
                     self.display_msg(msg, icon=qtw.QMessageBox.Critical,
-                                     informativeText=e)
+                                     informativeText=e, windowTitle='Datos erróneos')
 
     def cargar_stock(self):
         try:
@@ -835,6 +818,7 @@ class MainWindow(qtw.QMainWindow):
         try:
             msg.setInformativeText(str(kwargs.get('informativeText', ' ')))
             msg.setIcon(kwargs.get('icon', None))
+            msg.setWindowTitle(str(kwargs.get('windowTitle', ' ')))
         except Exception as e:
             print(e)
         msg.exec_()
