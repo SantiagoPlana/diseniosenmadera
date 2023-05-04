@@ -633,13 +633,13 @@ class MainWindow(qtw.QMainWindow):
         if len(self.tableview.selectedIndexes()) == 2:
             try:
                 item_idx = self.tableview.selectedIndexes()[0]
-                row = item_idx.row()
-                col = item_idx.column() - 1
+                row = self.filter_proxy_model.mapToSource(item_idx).row()
+                col = self.filter_proxy_model.mapToSource(item_idx).column() - 1
                 tipo = self.model._data[row][col]
                 modelo = self.tableview.selectedIndexes()[0].data()
                 art = tipo + ' ' + modelo
                 self.pedidos['Tipo'].append(tipo)
-                self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[1].data()))
+                self.pedidos['Precios'].append(round(float(self.tableview.selectedIndexes()[1].data())))
                 self.pedidos['Modelo'].append(modelo)
                 self.pedidos['Articulos'].append(art)
                 total = round(sum(self.pedidos['Precios']))
