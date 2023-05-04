@@ -2,7 +2,7 @@ import sys
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
 from PyQt5.QtGui import QPixmap, QPainter, QDoubleValidator, QIcon
-from PyQt5.QtPrintSupport import  QPrinter
+from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.Qt import QFileInfo
 import csv
 import pandas as pd
@@ -620,9 +620,11 @@ class MainWindow(qtw.QMainWindow):
 
     def llenar_lista(self):
         self.lista.clear()
+        self.lista.setSortingEnabled(True)
         if len(self.pedidos['Articulos']) > 0:
             for i in range(len(self.pedidos['Articulos'])):
                 self.lista.addItem(f"{self.pedidos['Articulos'][i]} --- {self.pedidos['Precios'][i]}")
+                #self.lista.addItem(f"{self.pedidos['Articulos'][i]}")
         # self.lista.setPalette(QPalette.Window)
         # self.lista.setPalette(QPalette.color(QColor.red()))
 
@@ -790,12 +792,15 @@ class MainWindow(qtw.QMainWindow):
                 try:
                     porcentaje = porcentaje / 100
                     for idx in idxs:
-                        row = idx.row()
-                        col = idx.column()
-                        idx = float(idx.data())
-                        print(row, col, idx)
+                        # print(self.filter_proxy_model.mapToSource(idx).row(), '-',
+                        #      self.filter_proxy_model.mapToSource(idx).column(), '-',
+                        #      self.filter_proxy_model.mapToSource(idx).data())
+                        row = self.filter_proxy_model.mapToSource(idx).row()
+                        col = self.filter_proxy_model.mapToSource(idx).column()
+                        idx = round(float(idx.data()))
+                        # print(row, col, idx)
                         nuevo_precio = idx + (idx * porcentaje)
-                        print(nuevo_precio)
+                        # print(nuevo_precio)
                         self.model._data[row][col] = nuevo_precio
                         self.statusBar().showMessage('Valores modificados correctamente.', 10000)
                 except Exception as e:
