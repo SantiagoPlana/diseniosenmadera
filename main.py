@@ -449,7 +449,8 @@ class MainWindow(qtw.QMainWindow):
         toolbar = self.addToolBar('Barra de tareas')
         toolbar.addAction('Abrir Ventas', self.cargar_tabla_ventas)
         toolbar.addAction('Abrir Stock', self.cargar_tabla_stock)
-        toolbar.addAction('Aplicar porcentaje', self.porcentaje)
+        toolbar.addAction('Aplicar suba', self.sumar_porcentaje_dialog)
+        toolbar.addAction('Aplicar descuento', self.descontar_porcentaje_dialog)
         toolbar.addAction('Cargar stock', self.cargar_stock)
         toolbar.setFloatable(False)
         toolbar.setAllowedAreas(qtc.Qt.TopToolBarArea)
@@ -495,7 +496,8 @@ class MainWindow(qtw.QMainWindow):
         # Botones
         self.btn_agregar = qtw.QPushButton('Agregar Item')
         self.btn_agregar.setFixedWidth(100)
-        self.btn_pedido = qtw.QPushButton('Finalizar Pedido')
+        self.btn_pedido = qtw.QPushButton('Presupuesto Venta')
+        self.btn_borrador = qtw.QPushButton('Presupuesto Borrador')
         self.btn_eliminar = qtw.QPushButton('Eliminar')
         self.btn_porcentaje = qtw.QPushButton('Aplicar')
         # self.btn_cargar = qtw.QPushButton('Cargar Tabla')
@@ -511,6 +513,7 @@ class MainWindow(qtw.QMainWindow):
 
         pedido_widget.layout().addWidget(self.observaciones, 6, 0, 1, 4)
         pedido_widget.layout().addWidget(self.btn_pedido, 7, 0)
+        pedido_widget.layout().addWidget(self.btn_borrador, 7, 1)
 
         filter_widget.layout().addWidget(qtw.QLabel('Filtro'), 1, 0)
         filter_widget.layout().addWidget(self.articulo, 2, 0)
@@ -527,7 +530,8 @@ class MainWindow(qtw.QMainWindow):
         # Signals
         self.btn_agregar.clicked.connect(self.agregar_art)
         self.btn_eliminar.clicked.connect(self.eliminar_item)
-        self.btn_pedido.clicked.connect(self.terminar_pedido)
+        self.btn_pedido.clicked.connect(self.terminar_venta)
+        self.btn_borrador.clicked.connect(self.generar_borrador_presupuesto)
 
         self.filtrar_por.currentTextChanged.connect(
             self.filter)
@@ -569,6 +573,7 @@ class MainWindow(qtw.QMainWindow):
         self.filtrar_por.addItems(self.model._headers)
         self.statusBar().showMessage('Tabla de ventas')
         self.tableview.resizeColumnToContents(5)
+        self.tableview.resizeRowsToContents()
 
     def cargar_tabla_stock(self):
         filename = 'Stock.csv'
@@ -579,6 +584,7 @@ class MainWindow(qtw.QMainWindow):
         self.filtrar_por.addItems(self.model._headers)
         self.statusBar().showMessage('Tabla de stock', 10000)
         self.tableview.resizeColumnsToContents()
+        self.tableview.resizeRowsToContents()
 
     def save_file(self):
         if self.model:
@@ -658,13 +664,13 @@ class MainWindow(qtw.QMainWindow):
                                      windowTitle='Datos insuficientes')
                 else:
                     item_idx = self.tableview.selectedIndexes()[1]
-                    row = item_idx.row()
-                    col = item_idx.column() - 1
+                    row = self.filter_proxy_model.mapToSource(item_idx).row()
+                    col = self.filter_proxy_model.mapToSource(item_idx).column() - 1
                     tipo = self.model._data[row][col]
                     modelo = self.tableview.selectedIndexes()[1].data()
                     art = tipo + ' ' + modelo
                     self.pedidos['Tipo'].append(tipo)
-                    self.pedidos['Precios'].append(float(self.tableview.selectedIndexes()[0].data()))
+                    self.pedidos['Precios'].append(round(float(self.tableview.selectedIndexes()[0].data())))
                     self.pedidos['Modelo'].append(modelo)
                     self.pedidos['Articulos'].append(art)
                     total = round(sum(self.pedidos['Precios']))
@@ -672,7 +678,7 @@ class MainWindow(qtw.QMainWindow):
                     self.total.setText(f"Total: {total}")
                     self.llenar_lista()
 
-    def terminar_pedido(self):
+    def terminar_venta(self):
         if len(self.pedidos['Articulos']) == 0:
             msg = 'Seleccione al menos un artículo.'
             self.display_msg(msg, icon=qtw.QMessageBox.Warning, windowTitle='Pedido vacío')
@@ -688,11 +694,32 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos['Tipo'].append('Envío')
                 self.pedidos['Modelo'].append('Envío')
                 self.pedidos['Articulos'].append('Envío')
-                self.pedidos['Precios'].append(float(self.envio.text()))
+                self.pedidos['Precios'].append(round(float(self.envio.text())))
                 self.pedidos['Total'] += float(self.envio.text())
             self.limpiar_campos()
             self.cargar_venta()
             self.descontar_stock()
+            self.detalle(self.pedidos)
+
+    def generar_borrador_presupuesto(self):
+        if len(self.pedidos['Articulos']) == 0:
+            msg = 'Seleccione al menos un artículo.'
+            self.display_msg(msg, icon=qtw.QMessageBox.Warning, windowTitle='Pedido vacío')
+        elif len(self.nombre_cliente.text()) == 0 or len(self.numero_cliente.text()) == 0:
+            msg = 'Complete los datos del cliente antes de finalizar el pedido.'
+            self.display_msg(msg, icon=qtw.QMessageBox.Warning, windowTitle='Datos incompletos')
+        else:
+            self.pedidos['Fecha'] = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
+            self.pedidos['Cliente'] = self.nombre_cliente.text()
+            self.pedidos['Contacto'] = self.numero_cliente.text()
+            self.pedidos['Observaciones'] = self.observaciones.toPlainText()
+            if self.envio.text():
+                self.pedidos['Tipo'].append('Envío')
+                self.pedidos['Modelo'].append('Envío')
+                self.pedidos['Articulos'].append('Envío')
+                self.pedidos['Precios'].append(round(float(self.envio.text())))
+                self.pedidos['Total'] += float(self.envio.text())
+            self.limpiar_campos()
             self.detalle(self.pedidos)
 
     def descontar_stock(self):
@@ -770,7 +797,7 @@ class MainWindow(qtw.QMainWindow):
             self.total.setText(f"Total: {total1}")
             self.llenar_lista()
 
-    def porcentaje(self):
+    def sumar_porcentaje_dialog(self):
         user_input = qtw.QInputDialog()
         porcentaje, ok = user_input.getDouble(self,
                                               'Porcentaje',
@@ -778,9 +805,19 @@ class MainWindow(qtw.QMainWindow):
                                               qtw.QLineEdit.Normal,
                                               0, 100)
         if porcentaje and ok:
-            self.calcular_porcentaje(porcentaje)
+            self.sumar_porcentaje(porcentaje)
 
-    def calcular_porcentaje(self, porcentaje):
+    def descontar_porcentaje_dialog(self):
+        user_input = qtw.QInputDialog()
+        porcentaje, ok = user_input.getDouble(self,
+                                              'Porcentaje',
+                                              'Porcentaje: ',
+                                              qtw.QLineEdit.Normal,
+                                              0, 100)
+        if porcentaje and ok:
+            self.descontar_porcentaje(porcentaje)
+
+    def sumar_porcentaje(self, porcentaje):
         idxs = self.tableview.selectedIndexes()
         if idxs:
             msg = qtw.QMessageBox()
@@ -800,6 +837,34 @@ class MainWindow(qtw.QMainWindow):
                         idx = round(float(idx.data()))
                         # print(row, col, idx)
                         nuevo_precio = idx + (idx * porcentaje)
+                        # print(nuevo_precio)
+                        self.model._data[row][col] = nuevo_precio
+                        self.statusBar().showMessage('Valores modificados correctamente.', 10000)
+                except Exception as e:
+                    msg = 'Seleccione únicamente celdas que contengan números.'
+                    self.display_msg(msg, icon=qtw.QMessageBox.Critical,
+                                     informativeText=e, windowTitle='Datos erróneos')
+
+    def descontar_porcentaje(self, porcentaje):
+        idxs = self.tableview.selectedIndexes()
+        if idxs:
+            msg = qtw.QMessageBox()
+            msg.setText(f'¿Está seguro de que desea modificar {len(idxs)} elementos?')
+            msg.setWindowTitle(' ')
+            msg.exec_()
+            if msg.sender():
+                # print('Accepted')
+                try:
+                    porcentaje = porcentaje / 100
+                    for idx in idxs:
+                        # print(self.filter_proxy_model.mapToSource(idx).row(), '-',
+                        #      self.filter_proxy_model.mapToSource(idx).column(), '-',
+                        #      self.filter_proxy_model.mapToSource(idx).data())
+                        row = self.filter_proxy_model.mapToSource(idx).row()
+                        col = self.filter_proxy_model.mapToSource(idx).column()
+                        idx = round(float(idx.data()))
+                        # print(row, col, idx)
+                        nuevo_precio = idx - (idx * porcentaje)
                         # print(nuevo_precio)
                         self.model._data[row][col] = nuevo_precio
                         self.statusBar().showMessage('Valores modificados correctamente.', 10000)
