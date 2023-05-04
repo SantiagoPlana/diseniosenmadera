@@ -9,8 +9,7 @@ import pandas as pd
 from pdf import PDF, generate_pdf
 
 
-class NuevoItemPino(qtw.QDialog):
-
+class NuevoItem(qtw.QDialog):
 
     def __init__(self, lst):
         super().__init__()
@@ -209,7 +208,7 @@ class CargarStock(qtw.QDialog):
         modelo = self.modelo.text()
         cantidad = self.cantidad.value()
         lst = [material, tipo, modelo, cantidad]
-        nuevo = NuevoItemPino(lst)
+        nuevo = NuevoItem(lst)
         nuevo.exec_()
 
 
@@ -482,6 +481,7 @@ class MainWindow(qtw.QMainWindow):
         self.observaciones = qtw.QTextEdit(placeholderText='Observaciones')
         self.nombre_cliente = qtw.QLineEdit(placeholderText='Nombre del cliente')
         self.numero_cliente = qtw.QLineEdit(placeholderText='Número de teléfono')
+        self.pago_tarjeta = qtw.QCheckBox('Tarjeta')
         self.total = qtw.QLabel('Total: 0')
 
         # Status bar
@@ -507,6 +507,7 @@ class MainWindow(qtw.QMainWindow):
         pedido_widget.layout().addWidget(self.numero_cliente, 2, 0)
         pedido_widget.layout().addWidget(self.lista, 3, 0, 1, 4)
         pedido_widget.layout().addWidget(self.envio, 4, 0)
+        pedido_widget.layout().addWidget(self.pago_tarjeta, 4, 2)
         pedido_widget.layout().addWidget(self.total, 4, 1)
         pedido_widget.layout().addWidget(self.btn_agregar, 5, 0)
         pedido_widget.layout().addWidget(self.btn_eliminar, 5, 1)
@@ -532,9 +533,8 @@ class MainWindow(qtw.QMainWindow):
         self.btn_eliminar.clicked.connect(self.eliminar_item)
         self.btn_pedido.clicked.connect(self.terminar_venta)
         self.btn_borrador.clicked.connect(self.generar_borrador_presupuesto)
-
-        self.filtrar_por.currentTextChanged.connect(
-            self.filter)
+        self.pago_tarjeta.toggled.connect(self.suba_tarjeta)
+        self.filtrar_por.currentTextChanged.connect(self.filter)
 
         # self.float_signal.connect(self.calcular_porcentaje)
         # End main UI code
@@ -650,7 +650,7 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos['Articulos'].append(art)
                 total = round(sum(self.pedidos['Precios']))
                 self.pedidos['Total'] = total
-                self.total.setText(f"Total: {total}")
+                self.total.setText(f"Total: <b>{total}</b>")
                 self.llenar_lista()
             except Exception as e:
                 if len(self.tableview.selectedIndexes()) > 2:
@@ -675,7 +675,7 @@ class MainWindow(qtw.QMainWindow):
                     self.pedidos['Articulos'].append(art)
                     total = round(sum(self.pedidos['Precios']))
                     self.pedidos['Total'] = total
-                    self.total.setText(f"Total: {total}")
+                    self.total.setText(f"Total: <b>{total}</b>")
                     self.llenar_lista()
 
     def terminar_venta(self):
@@ -794,7 +794,7 @@ class MainWindow(qtw.QMainWindow):
                 del(self.pedidos['Precios'][row])
             total1 = round(sum(self.pedidos['Precios']))
             self.pedidos['Total'] = total1
-            self.total.setText(f"Total: {total1}")
+            self.total.setText(f"Total: <b>{total1}</b>")
             self.llenar_lista()
 
     def sumar_porcentaje_dialog(self):
@@ -872,6 +872,17 @@ class MainWindow(qtw.QMainWindow):
                     msg = 'Seleccione únicamente celdas que contengan números.'
                     self.display_msg(msg, icon=qtw.QMessageBox.Critical,
                                      informativeText=e, windowTitle='Datos erróneos')
+
+    @qtc.pyqtSlot()
+    def suba_tarjeta(self):
+        if self.pago_tarjeta.isChecked():
+            nuevo_total = round(self.pedidos['Total'] * 1.15)
+            self.pedidos['Total'] = nuevo_total
+            self.total.setText(f"Total: <b>{nuevo_total}</b>")
+        else:
+            total = sum(self.pedidos['Precios'])
+            self.pedidos['Total'] = total
+            self.total.setText(f"Total: <b>{total}</b>")
 
     def cargar_stock(self):
         try:
