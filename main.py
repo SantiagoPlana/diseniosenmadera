@@ -233,7 +233,7 @@ class PedidoFinalizado(qtw.QDialog):
         self.values = list(self.dic.values())
         date = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
 
-        self.accept_btn = qtw.QPushButton('Emitir', clicked=self.accept)
+        self.accept_btn = qtw.QPushButton('Aceptar', clicked=self.accept)
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
         self.print_btn = qtw.QPushButton('Exportar a PDF')
 
@@ -267,9 +267,12 @@ class PedidoFinalizado(qtw.QDialog):
             self.grid.addWidget(
                 qtw.QLabel(f'{v[1]}'), count, 2)
             count += 1
-
-        self.grid.addWidget(qtw.QLabel(' '), count, 0, 1, 4)
+        if 'Tarjeta' in self.dic.keys():
+            count += 1
+            self.grid.addWidget(qtw.QLabel('Tarjeta 15%'), count, 0)
+        # self.grid.addWidget(qtw.QLabel(' '), count, 0, 1, 4)
         # self.grid.addWidget(self.envio, count + 1, 0)
+        self.grid.addWidget(qtw.QLabel('Total:'), count+1, 0)
         self.grid.addWidget(qtw.QLabel(f"<b>{self.dic['Total']}</b>"), count+1, 2)
         self.grid.addWidget(qtw.QLabel(' '), count + 2, 0)
         self.grid.addWidget(self.accept_btn, count + 3, 0)
@@ -490,8 +493,9 @@ class MainWindow(qtw.QMainWindow):
         # Config
         self.lista.setAlternatingRowColors(True)
         self.lista.setSelectionMode(qtw.QAbstractItemView.ExtendedSelection)
+
         # Agregar categorías
-        # self.lista.setFont()
+        self.total.setSizePolicy(qtw.QSizePolicy.Maximum, qtw.QSizePolicy.Preferred)
 
         # Botones
         self.btn_agregar = qtw.QPushButton('Agregar Item')
@@ -630,17 +634,15 @@ class MainWindow(qtw.QMainWindow):
         if len(self.pedidos['Articulos']) > 0:
             for i in range(len(self.pedidos['Articulos'])):
                 self.lista.addItem(f"{self.pedidos['Articulos'][i]} --- {self.pedidos['Precios'][i]}")
-                #self.lista.addItem(f"{self.pedidos['Articulos'][i]}")
-        # self.lista.setPalette(QPalette.Window)
-        # self.lista.setPalette(QPalette.color(QColor.red()))
+
 
     def agregar_art(self):
         global total
         if len(self.tableview.selectedIndexes()) == 2:
-            try:
+            try:  # En caso de que se hayan seleccionado celdas con datos no compatibles e.g.: 2 'str'
                 item_idx = self.tableview.selectedIndexes()[0]
-                row = self.filter_proxy_model.mapToSource(item_idx).row()
-                col = self.filter_proxy_model.mapToSource(item_idx).column() - 1
+                row = self.filter_proxy_model.mapToSource(item_idx).row()  # Índice "absoluto" en caso de tabla filtrada
+                col = self.filter_proxy_model.mapToSource(item_idx).column() - 1  # Idem
                 tipo = self.model._data[row][col]
                 modelo = self.tableview.selectedIndexes()[0].data()
                 art = tipo + ' ' + modelo
@@ -771,6 +773,8 @@ class MainWindow(qtw.QMainWindow):
 
     def detalle(self, dic):
         """Instancia de clase de FileDialog con detalle de pedido"""
+        if self.pago_tarjeta.isChecked():
+            dic['Tarjeta'] = '15%'
         dialog = PedidoFinalizado(dic)
         dialog.exec()
         for k in self.pedidos.keys():
