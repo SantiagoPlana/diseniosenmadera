@@ -6,7 +6,20 @@ from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.Qt import QFileInfo
 import csv
 import pandas as pd
-from pdf import PDF, generate_pdf
+from pdf import generate_pdf
+from password import *
+
+
+class SettingsDialog(qtw.QDialog):
+    """Ventana de diálogo para configuración"""
+
+    def __init__(self, settings, parent=None):
+        super().__init__(parent, modal=True)
+        self.setLayout(qtw.QFormLayout)
+        self.settings = settings
+        self.layout().addRow(
+            qtw.QLabel('<h1>Configuración</h1>'),
+        )
 
 
 class NuevoItem(qtw.QDialog):
@@ -396,6 +409,8 @@ class CsvTableModel(qtc.QAbstractTableModel):
 
 
 class MainWindow(qtw.QMainWindow):
+    settings = qtc.QSettings('Diseños en Madera', 'Manager de Datos DeM')
+    # settings.setDefaultFormat(qtc.QSettings.NativeFormat)
     model = None
     pedidos = {'Fecha': '',
                'Cliente': '',
@@ -413,24 +428,34 @@ class MainWindow(qtw.QMainWindow):
         """MainWindow constructor."""
         super().__init__()
         # Password check
-        password = ''
-        while password != 'Ok':
-            log_in, ok = qtw.QInputDialog.getText(self, "Ingreso",
-                                                  "Contraseña:", qtw.QLineEdit.Password,
-                                                  )
-            if not ok:
-                self.close()
-                sys.exit()
-            else:
-                if log_in != '1':
-                    qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
-                else:
-                    password = 'Ok'
+        # password = ''
+        # while password != 'Ok':
+        #     log_in, ok = qtw.QInputDialog.getText(self, "Ingreso",
+        #                                          "Contraseña:", qtw.QLineEdit.Password,
+        #                                          )
+        #    if not ok:
+        #        self.close()
+        #        sys.exit()
+        #    else:
+        #        if log_in != '1':
+        #            qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
+        #        else:
+        #            password = 'Ok'
+
+        self.password()
+
+        # SETTINGS
+        self.settings = qtc.QSettings('Diseños en Madera', 'Manager de Datos DeM')
+        #settings.setDefaultFormat(qtc.QSettings.NativeFormat)
+        print(self.settings.fileName())
 
         # Main UI
         self.setWindowTitle('Diseños en Madera')
         self.setWindowIcon(QIcon('diseñosenmadera2.png'))
-        self.resize(1380, 600)
+        try:
+            self.resize(self.settings.value('window size'))
+        except:
+            self.resize(1380, 600)
         self.center()
         self.tableview = qtw.QTableView()
         self.tableview.setSortingEnabled(True)
@@ -544,7 +569,62 @@ class MainWindow(qtw.QMainWindow):
         # End main UI code
         self.show()
 
+    # Password
+
+    def password(self):
+        if 'password' not in self.settings.allKeys():
+            password_set = 0
+            dialog = qtw.QDialog()
+            dialog.setModal(True)
+            line1 = qtw.QLineEdit()
+            line2 = qtw.QLineEdit()
+            line1.setEchoMode(qtw.QLineEdit.Password)
+            line2.setEchoMode(qtw.QLineEdit.Password)
+            mismatch = qtw.QLabel('')
+            dialog.setLayout(qtw.QGridLayout())
+            dialog.layout().addWidget(qtw.QLabel('Ingrese una contraseña:'), 0, 1)
+            dialog.layout().addWidget(line1, 0, 2)
+            dialog.layout().addWidget(qtw.QLabel('Confirme la contraseña:'), 1, 1)
+            dialog.layout().addWidget(line2, 1, 2)
+            dialog.layout().addWidget(mismatch, 2, 1)
+            dialog.layout().addWidget(qtw.QPushButton('Aceptar', clicked=dialog.accept), 3, 1)
+            dialog.layout().addWidget(qtw.QPushButton('Cancelar', clicked=sys.exit), 3, 2)
+            dialog.rejected.connect(sys.exit)
+            while not password_set:
+                dialog.exec_()
+                if dialog.accepted:
+                    print(line1.text(), line2.text())
+                    if line1.text() == line2.text() and len(line1.text()) > 2:
+                        """Encriptar"""
+                        encrypted = encrypt(line1.text().encode('utf-8'))
+                        self.settings.setValue('password', encrypted)
+                        password_set = 1
+                    else:
+                        mismatch.setText('Las contraseñas ingresadas no coinciden.'
+                                         'Intente nuevamente')
+                    # continue
+        else:
+            passw = False
+            while not passw:
+                log_in, ok = qtw.QInputDialog.getText(self, "Ingreso",
+                                                      "Contraseña:", qtw.QLineEdit.Password,
+                                                      )
+                if not ok:
+                    self.close()
+                    sys.exit()
+                else:
+                    # while log_in != self.settings.value('password'):
+                    if not check_pass(log_in.encode('utf-8'), self.settings.value('password')):
+                        qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
+                    else:
+                        passw = True
+
     # Display method
+
+    def closeEvent(self, event):
+        self.settings.setValue('window size', self.size())
+        # self.settings.setValue('fullscreen', mw.isFullScreen())
+
     def center(self):
         geometry = self.frameGeometry()
         dsktp_geo = qtw.QDesktopWidget().availableGeometry().center()
@@ -920,4 +1000,5 @@ if __name__ == '__main__':
     # it's required to save a reference to MainWindow.
     # if it goes out of scope, it will be destroyed.
     mw = MainWindow()
+    # mw.settings.setValue('fullscreen', mw.isFullScreen())
     sys.exit(app.exec())
