@@ -7,19 +7,8 @@ from PyQt5.Qt import QFileInfo
 import csv
 import pandas as pd
 from pdf import generate_pdf
+from reportlabpdf import generate
 from password import *
-
-
-class SettingsDialog(qtw.QDialog):
-    """Ventana de diálogo para configuración"""
-
-    def __init__(self, settings, parent=None):
-        super().__init__(parent, modal=True)
-        self.setLayout(qtw.QFormLayout)
-        self.settings = settings
-        self.layout().addRow(
-            qtw.QLabel('<h1>Configuración</h1>'),
-        )
 
 
 class NuevoItem(qtw.QDialog):
@@ -292,7 +281,8 @@ class PedidoFinalizado(qtw.QDialog):
         self.grid.addWidget(self.cancel_btn, count + 3, 2)
         self.grid.addWidget(self.print_btn, count + 3, 1)
 
-        self.print_btn.clicked.connect(lambda: generate_pdf(self.dic, new_dic))
+        # self.print_btn.clicked.connect(lambda: generate_pdf(self.dic, new_dic))
+        self.print_btn.clicked.connect(lambda: generate(self.dic, new_dic))
 
     def guardar_pedido(self):
         """Exportar a PDF"""
@@ -428,26 +418,11 @@ class MainWindow(qtw.QMainWindow):
         """MainWindow constructor."""
         super().__init__()
         # Password check
-        # password = ''
-        # while password != 'Ok':
-        #     log_in, ok = qtw.QInputDialog.getText(self, "Ingreso",
-        #                                          "Contraseña:", qtw.QLineEdit.Password,
-        #                                          )
-        #    if not ok:
-        #        self.close()
-        #        sys.exit()
-        #    else:
-        #        if log_in != '1':
-        #            qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
-        #        else:
-        #            password = 'Ok'
 
         self.password()
 
         # SETTINGS
         self.settings = qtc.QSettings('Diseños en Madera', 'Manager de Datos DeM')
-        #settings.setDefaultFormat(qtc.QSettings.NativeFormat)
-        print(self.settings.fileName())
 
         # Main UI
         self.setWindowTitle('Diseños en Madera')
@@ -572,6 +547,7 @@ class MainWindow(qtw.QMainWindow):
     # Password
 
     def password(self):
+        """Login con contraseña o seteo de contraseña si no existe."""
         if 'password' not in self.settings.allKeys():
             password_set = 0
             dialog = qtw.QDialog()
@@ -593,7 +569,7 @@ class MainWindow(qtw.QMainWindow):
             while not password_set:
                 dialog.exec_()
                 if dialog.accepted:
-                    print(line1.text(), line2.text())
+                    # print(line1.text(), line2.text())
                     if line1.text() == line2.text() and len(line1.text()) > 2:
                         """Encriptar"""
                         encrypted = encrypt(line1.text().encode('utf-8'))
@@ -618,10 +594,10 @@ class MainWindow(qtw.QMainWindow):
                         qtw.QMessageBox.critical(self, 'Idiota', 'Contraseña incorrecta')
                     else:
                         passw = True
-
     # Display method
 
     def closeEvent(self, event):
+        """Método que se dispara al cerrar el programa."""
         self.settings.setValue('window size', self.size())
         # self.settings.setValue('fullscreen', mw.isFullScreen())
 
@@ -701,6 +677,7 @@ class MainWindow(qtw.QMainWindow):
 
     # Form methods
     def limpiar_campos(self):
+        """Resetea todos los campos."""
         self.lista.clear()
         self.total.setText('Total: 0')
         self.nombre_cliente.clear()
@@ -709,14 +686,15 @@ class MainWindow(qtw.QMainWindow):
         self.observaciones.setPlainText('')
 
     def llenar_lista(self):
+        """Puebla lista del pedido."""
         self.lista.clear()
         self.lista.setSortingEnabled(True)
         if len(self.pedidos['Articulos']) > 0:
             for i in range(len(self.pedidos['Articulos'])):
                 self.lista.addItem(f"{self.pedidos['Articulos'][i]} --- {self.pedidos['Precios'][i]}")
 
-
     def agregar_art(self):
+        """Agrega un artículo al pedido."""
         global total
         if len(self.tableview.selectedIndexes()) == 2:
             try:  # En caso de que se hayan seleccionado celdas con datos no compatibles e.g.: 2 'str'
@@ -761,6 +739,8 @@ class MainWindow(qtw.QMainWindow):
                     self.llenar_lista()
 
     def terminar_venta(self):
+        """Carga el detalle como venta hecha y descuenta stock."""
+
         if len(self.pedidos['Articulos']) == 0:
             msg = 'Seleccione al menos un artículo.'
             self.display_msg(msg, icon=qtw.QMessageBox.Warning, windowTitle='Pedido vacío')
@@ -784,6 +764,8 @@ class MainWindow(qtw.QMainWindow):
             self.detalle(self.pedidos)
 
     def generar_borrador_presupuesto(self):
+        """Genera un borrador de presupuesto sin descontar stock ni cargar venta."""
+
         if len(self.pedidos['Articulos']) == 0:
             msg = 'Seleccione al menos un artículo.'
             self.display_msg(msg, icon=qtw.QMessageBox.Warning, windowTitle='Pedido vacío')
@@ -833,12 +815,13 @@ class MainWindow(qtw.QMainWindow):
         stock.to_csv('Stock.csv', index=False)
 
     def cargar_venta(self):
+        """Guarda la venta en CSV de ventas"""
         ventas = pd.read_csv('Ventas_nuevo.csv')
         row = len(ventas)
         subset = {k: self.pedidos[k] for k in ('Fecha', 'Cliente', 'Contacto',
                                                'Articulos', 'Precios',
                                                'Total', 'Observaciones')}
-        print(subset)
+        # print(subset)
         for k, v in subset.items():
             try:
                 ventas.at[row, k] = v
@@ -882,6 +865,8 @@ class MainWindow(qtw.QMainWindow):
             self.llenar_lista()
 
     def sumar_porcentaje_dialog(self):
+        """Input dialog para ingresar porcentaje"""
+
         user_input = qtw.QInputDialog()
         porcentaje, ok = user_input.getDouble(self,
                                               'Porcentaje',
@@ -892,6 +877,8 @@ class MainWindow(qtw.QMainWindow):
             self.sumar_porcentaje(porcentaje)
 
     def descontar_porcentaje_dialog(self):
+        """Input dialog para ingresar porcentaje"""
+
         user_input = qtw.QInputDialog()
         porcentaje, ok = user_input.getDouble(self,
                                               'Porcentaje',
@@ -913,9 +900,7 @@ class MainWindow(qtw.QMainWindow):
                 try:
                     porcentaje = porcentaje / 100
                     for idx in idxs:
-                        # print(self.filter_proxy_model.mapToSource(idx).row(), '-',
-                        #      self.filter_proxy_model.mapToSource(idx).column(), '-',
-                        #      self.filter_proxy_model.mapToSource(idx).data())
+                        # Map to source hace que todo funcione bien con la tabla filtrada.
                         row = self.filter_proxy_model.mapToSource(idx).row()
                         col = self.filter_proxy_model.mapToSource(idx).column()
                         idx = round(float(idx.data()))
@@ -959,6 +944,7 @@ class MainWindow(qtw.QMainWindow):
 
     @qtc.pyqtSlot()
     def suba_tarjeta(self):
+        # Por click, si está marcado se calcula con pctje y tira el display.
         if self.pago_tarjeta.isChecked():
             nuevo_total = round(self.pedidos['Total'] * 1.15)
             self.pedidos['Total'] = nuevo_total
