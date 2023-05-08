@@ -484,6 +484,7 @@ class MainWindow(qtw.QMainWindow):
         self.observaciones = qtw.QTextEdit(placeholderText='Observaciones')
         self.nombre_cliente = qtw.QLineEdit(placeholderText='Nombre del cliente')
         self.numero_cliente = qtw.QLineEdit(placeholderText='Número de teléfono')
+        self.direccion = qtw.QLineEdit(placeholderText='Dirección')
         self.pago_tarjeta = qtw.QCheckBox('Tarjeta')
         self.total = qtw.QLabel('Total: 0')
 
@@ -509,6 +510,7 @@ class MainWindow(qtw.QMainWindow):
         # Layout
         pedido_widget.layout().addWidget(self.nombre_cliente, 1, 0)
         pedido_widget.layout().addWidget(self.numero_cliente, 2, 0)
+        pedido_widget.layout().addWidget(self.direccion, 1, 1)
         pedido_widget.layout().addWidget(self.lista, 3, 0, 1, 4)
         pedido_widget.layout().addWidget(self.envio, 4, 0)
         pedido_widget.layout().addWidget(self.pago_tarjeta, 4, 2)
@@ -682,7 +684,9 @@ class MainWindow(qtw.QMainWindow):
         self.total.setText('Total: 0')
         self.nombre_cliente.clear()
         self.numero_cliente.clear()
+        self.direccion.clear()
         self.envio.clear()
+        self.pago_tarjeta.setChecked(False)
         self.observaciones.setPlainText('')
 
     def llenar_lista(self):
@@ -758,6 +762,8 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos['Articulos'].append('Envío')
                 self.pedidos['Precios'].append(round(float(self.envio.text())))
                 self.pedidos['Total'] += float(self.envio.text())
+            if self.direccion.text():
+                self.pedidos['Dirección'] = self.direccion.text()
             self.limpiar_campos()
             self.cargar_venta()
             self.descontar_stock()
@@ -783,6 +789,8 @@ class MainWindow(qtw.QMainWindow):
                 self.pedidos['Articulos'].append('Envío')
                 self.pedidos['Precios'].append(round(float(self.envio.text())))
                 self.pedidos['Total'] += float(self.envio.text())
+            if self.direccion.text():
+                self.pedidos['Dirección'] = self.direccion.text()
             self.limpiar_campos()
             self.detalle(self.pedidos)
 

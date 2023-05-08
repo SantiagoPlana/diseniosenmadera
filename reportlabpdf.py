@@ -43,7 +43,10 @@ def generate(dic1, dic2):
     text1.setFont('Calibri', 12)
     text1.textLine(f'Nombre: {dic1["Cliente"]}')
     text1.textLine(f'Contacto: {dic1["Contacto"]}')
-    text1.textLine(f'Dirección: ')
+    if 'Dirección' in dic1.keys():
+        text1.textLine(f'Dirección: {dic1["Dirección"]}')
+    else:
+        text1.textLine(f'Dirección:')
 
     # Text 2
     text2 = canvas.beginText(width / 2, length-190)
@@ -59,7 +62,7 @@ def generate(dic1, dic2):
 
     # Tabla
     # Text4
-    text4 = canvas.beginText(50, length - 300)
+    text4 = canvas.beginText(50, length - 270)
     text4.setFont('Calibri Bold', 14)
     text4.textLine('Concepto')
     text4.setFont('Calibri', 12)
@@ -68,7 +71,7 @@ def generate(dic1, dic2):
         text4.textLine(k)
         text4.textLine()
     # Text 5
-    text5 = canvas.beginText(width/2, length - 300)
+    text5 = canvas.beginText(width/2, length - 270)
     text5.setFont('Calibri Bold', 14)
     text5.textLine('Cantidad')
     text5.setFont('Calibri', 12)
@@ -78,7 +81,7 @@ def generate(dic1, dic2):
         text5.textLine()
 
     # Text 6
-    text6 = canvas.beginText(width/2 + 70, length-300)
+    text6 = canvas.beginText(width/2 + 70, length-270)
     text6.setFont('Calibri Bold', 14)
     text6.textLine('Precio Unidad')
     text6.setFont('Calibri', 12)
@@ -88,7 +91,7 @@ def generate(dic1, dic2):
         text6.textLine()
     # text6.textLine('Total:')
     # Text 7
-    text7 = canvas.beginText(width-70, length-300)
+    text7 = canvas.beginText(width-70, length-270)
     text7.setFont('Calibri Bold', 14)
     text7.textLine('Total')
     text7.setFont('Calibri', 12)
@@ -102,7 +105,10 @@ def generate(dic1, dic2):
     # End text
     endtext = canvas.beginText(50, 160)
     endtext.setFont('Calibri Bold', 14)
-    endtext.textLine('Método de pago:')
+    if 'Tarjeta' in dic1.keys():
+        endtext.textLine('Método de pago: Tarjeta (15%)')
+    else:
+        endtext.textLine('Método de pago: Contado')
     endtext.textLine('Fecha de entrega:')
     endtext.textLine()
     endtext.textLine(f'Comentarios: {dic1["Observaciones"]}')
