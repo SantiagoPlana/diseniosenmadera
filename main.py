@@ -235,7 +235,7 @@ class PedidoFinalizado(qtw.QDialog):
         self.values = list(self.dic.values())
         date = qtc.QDateTime().currentDateTime().date().toString("dd-MM-yyyy")
 
-        self.accept_btn = qtw.QPushButton('Aceptar', clicked=self.accept)
+        # self.accept_btn = qtw.QPushButton('Aceptar', clicked=self.accept)
         self.cancel_btn = qtw.QPushButton('Cancelar', clicked=self.reject)
         self.print_btn = qtw.QPushButton('Exportar a PDF')
 
@@ -277,9 +277,9 @@ class PedidoFinalizado(qtw.QDialog):
         self.grid.addWidget(qtw.QLabel('Total:'), count+1, 0)
         self.grid.addWidget(qtw.QLabel(f"<b>{self.dic['Total']}</b>"), count+1, 2)
         self.grid.addWidget(qtw.QLabel(' '), count + 2, 0)
-        self.grid.addWidget(self.accept_btn, count + 3, 0)
-        self.grid.addWidget(self.cancel_btn, count + 3, 2)
-        self.grid.addWidget(self.print_btn, count + 3, 1)
+        # self.grid.addWidget(self.accept_btn, count + 3, 0)
+        self.grid.addWidget(self.cancel_btn, count + 3, 1)
+        self.grid.addWidget(self.print_btn, count + 3, 0)
 
         # self.print_btn.clicked.connect(lambda: generate_pdf(self.dic, new_dic))
         self.print_btn.clicked.connect(lambda: self.generateandSave(new_dic))
@@ -296,6 +296,7 @@ class PedidoFinalizado(qtw.QDialog):
                                                         qtw.QFileDialog.DontResolveSymlinks)
             settings.setValue('PDF_Path', path)
             generate(self.dic, dic, path)
+        self.close()
 
     def guardar_pedido(self):
         """Exportar a PDF"""
@@ -488,7 +489,9 @@ class MainWindow(qtw.QMainWindow):
         dock2.setWidget(filter_widget)
 
         # Widgets
-        self.articulo = qtw.QLineEdit()
+        self.edit_filtro = qtw.QLineEdit() # Line edit para filtrar la tabla
+        self.label_filtro = qtw.QLabel('Filtro')
+        self.label_filtrar_por = qtw.QLabel('Filtrar por')
         self.envio = qtw.QLineEdit(placeholderText='Costo de envío')
         # self.articulo.setStyleSheet('font-size: 15px;')
         # self.articulo.setFixedWidth(150)
@@ -535,9 +538,10 @@ class MainWindow(qtw.QMainWindow):
         pedido_widget.layout().addWidget(self.btn_pedido, 7, 0)
         pedido_widget.layout().addWidget(self.btn_borrador, 7, 1)
 
-        filter_widget.layout().addWidget(qtw.QLabel('Filtro'), 1, 0)
-        filter_widget.layout().addWidget(self.articulo, 2, 0)
-        filter_widget.layout().addWidget(qtw.QLabel('Filtrar por'), 1, 1)
+
+        filter_widget.layout().addWidget(self.label_filtro, 1, 0)
+        filter_widget.layout().addWidget(self.edit_filtro, 2, 0)
+        filter_widget.layout().addWidget(self.label_filtrar_por, 1, 1)
         filter_widget.layout().addWidget(self.filtrar_por, 2, 1)
 
         # Proxy model
@@ -545,7 +549,7 @@ class MainWindow(qtw.QMainWindow):
 
         self.filter_proxy_model.setFilterCaseSensitivity(qtc.Qt.CaseInsensitive)
         self.filter_proxy_model.setFilterKeyColumn(0)
-        self.articulo.textChanged.connect(self.filter_proxy_model.setFilterRegExp)
+        self.edit_filtro.textChanged.connect(self.filter_proxy_model.setFilterRegExp)
 
         # Signals
         self.btn_agregar.clicked.connect(self.agregar_art)
@@ -861,6 +865,8 @@ class MainWindow(qtw.QMainWindow):
             dic['Tarjeta'] = '15%'
         dialog = PedidoFinalizado(dic)
         dialog.exec()
+        dialog.print_btn.clicked.connect(lambda:
+                                         self.statusBar().showMessage('PDF guardado correctamente'))
         for k in self.pedidos.keys():
             if k == 'Total':
                 self.pedidos[k] = 0
