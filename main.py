@@ -282,7 +282,20 @@ class PedidoFinalizado(qtw.QDialog):
         self.grid.addWidget(self.print_btn, count + 3, 1)
 
         # self.print_btn.clicked.connect(lambda: generate_pdf(self.dic, new_dic))
-        self.print_btn.clicked.connect(lambda: generate(self.dic, new_dic))
+        self.print_btn.clicked.connect(lambda: self.generateandSave(new_dic))
+
+    def generateandSave(self, dic):
+        settings = qtc.QSettings('Diseños en Madera', 'Manager de Datos DeM')
+        if 'PDF_Path' in settings.allKeys():
+            generate(self.dic, dic, settings.value('PDF_Path'))
+        else:
+            path = qtw.QFileDialog.getExistingDirectory(self,
+                                                        'Guardar PDF',
+                                                        qtc.QDir.currentPath(),
+                                                        qtw.QFileDialog.ShowDirsOnly |
+                                                        qtw.QFileDialog.DontResolveSymlinks)
+            settings.setValue('PDF_Path', path)
+            generate(self.dic, dic, path)
 
     def guardar_pedido(self):
         """Exportar a PDF"""

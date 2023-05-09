@@ -16,10 +16,10 @@ x = {'Fecha': '2-05-2023', 'Cliente': 'Johannes Perez',
 new = {'Silla Eco Tapiz': [4, 40000], 'Mesa Octogonal': [2, 45234]}
 
 
-def generate(dic1, dic2):
+def generate(dic1, dic2, path):
     datos = ['Diseños en Maderas', 'Av. España 1445 Sur', '2645305811 / 2617149952']
     rn = random.randint(1, 100)
-    name = f'{dic1["Fecha"]}-{dic1["Cliente"]}-{rn}.pdf'
+    name = f'{path}/{dic1["Fecha"]}-{dic1["Cliente"]}-{rn}.pdf'
     canvas = Canvas(name)
     width, length = A4
 
