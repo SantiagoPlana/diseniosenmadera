@@ -140,7 +140,7 @@ class CargarStock(qtw.QDialog):
 
     @qtc.pyqtSlot(str)
     def set_complete_tipo(self, string=str):
-        print('Signal!')
+        # print('Signal!')
         subset = self.stock[self.stock['Material'] == string]['Tipo de articulo'].unique()
         self.completer_tipo = qtw.QCompleter(subset, self)
         self.completer_tipo.setFilterMode(qtc.Qt.MatchContains)
@@ -150,7 +150,7 @@ class CargarStock(qtw.QDialog):
 
     @qtc.pyqtSlot(str)
     def set_complete_modelo(self, string=str):
-        print('Signal!')
+        # print('Signal!')
         subset = self.stock[self.stock['Tipo de articulo'] == string]['Modelo']
         completer = qtw.QCompleter(subset, self)
         completer.setFilterMode(qtc.Qt.MatchContains)
@@ -162,7 +162,7 @@ class CargarStock(qtw.QDialog):
         tipo = self.tipo.text()
         modelo = self.modelo.text()
         cantidad = self.cantidad.value()
-        print(material, tipo, modelo, cantidad)
+        # print(material, tipo, modelo, cantidad)
         if len(tipo) == 0 or len(modelo) == 0 or cantidad == 0:
             message = "Todos los campos deben estar completos"
             msg = qtw.QMessageBox()
@@ -372,7 +372,7 @@ class CsvTableModel(qtc.QAbstractTableModel):
         if index.isValid() and role == qtc.Qt.EditRole:
             if not value:
                 return False
-            self._data[index.row()][index.column()] = value.encode('latin-1')
+            self._data[index.row()][index.column()] = value
             self.dataChanged.emit(index, index, [role])
             return True
         else:
