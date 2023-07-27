@@ -30,7 +30,8 @@ def generate(dic1, dic2, path):
     # (distance from left edge of canvas, distance from bottom edge)
     # measured in points (point == 1/72 inches; 72 == 1 inch)
     image = 'diseñosenmadera2.png'
-    canvas.drawString(50, length - 115, 'Presupuesto')
+
+    canvas.drawString(50, length - 100, 'Presupuesto')
     # canvas.setTitle('Presupuesto')
     canvas.drawImage(image, x=width-120, y=length-120, width=90, height=90, mask=None)
     canvas.setFont('Calibri Bold', 15)
@@ -47,7 +48,7 @@ def generate(dic1, dic2, path):
         text1.textLine(f'Dirección: {dic1["Dirección"]}')
     else:
         text1.textLine(f'Dirección:')
-
+    print('text 1 clear')
     # Text 2
     text2 = canvas.beginText(width / 2, length-190)
     text2.setFont('Calibri Bold', 14)
@@ -59,17 +60,19 @@ def generate(dic1, dic2, path):
     text3.textLine(datos[0])
     text3.textLine(datos[1])
     text3.textLine(datos[2])
+    print('text 2 clear')
 
     # Tabla
     # Text4
     text4 = canvas.beginText(50, length - 270)
     text4.setFont('Calibri Bold', 14)
     text4.textLine('Concepto')
-    text4.setFont('Calibri', 12)
+    text4.setFont('Calibri', 11)
     for k in dic2.keys():
         text4.textLine()
         text4.textLine(k)
         text4.textLine()
+    print('text 4 clear')
     # Text 5
     text5 = canvas.beginText(width/2, length - 270)
     text5.setFont('Calibri Bold', 14)
@@ -79,7 +82,7 @@ def generate(dic1, dic2, path):
         text5.textLine()
         text5.textLine(f'{v[0]}')
         text5.textLine()
-
+    print('text 5 clear')
     # Text 6
     text6 = canvas.beginText(width/2 + 70, length-270)
     text6.setFont('Calibri Bold', 14)
@@ -87,8 +90,10 @@ def generate(dic1, dic2, path):
     text6.setFont('Calibri', 12)
     for v in dic2.values():
         text6.textLine()
-        text6.textLine(f'{v[1] / v[0]}')
+        precio = '%.2f' % (float(v[1]) / int(v[0]))
+        text6.textLine(f'{precio}')
         text6.textLine()
+    print('text 6 clear')
     # text6.textLine('Total:')
     # Text 7
     text7 = canvas.beginText(width-70, length-270)
@@ -101,12 +106,13 @@ def generate(dic1, dic2, path):
         text7.textLine()
     text7.setFont('Calibri Bold', 12)
     text7.textLine(f'{dic1["Total"]}')
+    print('text 7 clear')
 
     # End text
     endtext = canvas.beginText(50, 160)
     endtext.setFont('Calibri Bold', 14)
     if 'Tarjeta' in dic1.keys():
-        endtext.textLine('Método de pago: Tarjeta (15%)')
+        endtext.textLine(f'Método de pago: Interés {dic1["Tarjeta"]}')
     else:
         endtext.textLine('Método de pago: Contado')
     endtext.textLine('Fecha de entrega:')
